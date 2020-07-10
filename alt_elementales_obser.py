@@ -1,14 +1,7 @@
-from igraph import *
-from HeapBinaria import HeapBinaria
 import pickle
+
 import dill
-import pandas as pd
-import random
-import utm
-import matplotlib.pyplot as pl
-import time
-import csv
-import pandas as pd
+from igraph import *
 
 dump_file3 = open('hiperruta_minimo.pkl', 'rb')
 hiperruta_minimo = dill.load(dump_file3)
