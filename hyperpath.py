@@ -1,7 +1,6 @@
 from igraph import *
 from HeapBinaria import HeapBinaria
 
-
 # class GraphBuilder:
 #
 #     @staticmethod
@@ -16,6 +15,146 @@ class Hyperpath:
         self.transfer_penalty = transfer_penalty
         self.waiting_penalty = waiting_penalty
         self._hyperpath = self._build_hyperpath(grafo, destination, transfer_penalty, waiting_penalty)
+
+    def format_paths(self, path_set):
+
+        lista_caminos = []
+
+        for j in path_set:
+            prob_camino = 1
+            camino = ''
+            camino_paradero = ''
+            metro_inicial = ''
+            metro_final = ''
+            n_iteracion = 0
+            tipo_nodo_anterior = ''
+            ultimo_nodo = j[-1]
+            nodo_anterior = ''
+
+            for n in j:
+                n_iteracion += 1
+
+                # si el nodo actual es un paradero
+                nombre_nodo = self._hyperpath.vs[n]['name2']
+                indice_nodo_actual = self.g.vs.find(name2=nombre_nodo).index
+                if (self.g.vs["tipo"][indice_nodo_actual]) == 'paradero':
+
+                    tipo_nodo_actual = 'paradero'
+                    frecuencia_total = self.g.vs[indice_nodo_actual]["frecuencia"]
+
+                    # si el camino esta vacio agrego el primer nodo al string camino
+                    if camino == '':
+
+                        camino = nombre_nodo
+                        camino_paradero = nombre_nodo
+                        if nombre_nodo[:2] == 'M-':
+                            metro_inicial = nombre_nodo
+
+                    # si el camino no esta vacio, es la segunda iteracion y el nodo anterior es igual al actual por caminata
+                    elif (n_iteracion == 2 and tipo_nodo_actual == tipo_nodo_anterior):
+                        # print('entre 2')
+                        camino = nombre_nodo
+                        camino_paradero = nombre_nodo
+                        metro_inicial = ''
+                        if nombre_nodo[:2] == 'M-':
+                            metro_inicial = nombre_nodo
+
+                    # si es el ultimo nodo
+                    elif (n == ultimo_nodo or self._hyperpath.vs[ultimo_nodo]['name2'] == nombre_nodo):
+
+                        # si el nodo anterior es distinto al nodo actual
+                        if tipo_nodo_anterior != tipo_nodo_actual:
+                            # si es metro
+                            if nombre_nodo[:2] == 'M-' and metro_inicial != '':
+                                # print('entre 5')
+                                metro_final = nombre_nodo
+
+                                camino = camino + '/' + metro_final
+                                camino_paradero = camino_paradero + '/' + metro_final
+
+                                metro_final = ''
+                                metro_inicial = ''
+
+                            # si es bus
+                            else:
+                                camino = camino + '/' + nombre_nodo
+                                camino_paradero = camino_paradero + '/' + nombre_nodo
+                    # si es un nodo intermedio
+                    else:
+                        # si es metro
+                        # print('entre donde debo entrar')
+                        if nombre_nodo[:2] == 'M-' and metro_inicial == '':
+                            metro_inicial = nombre_nodo
+
+                            camino = camino + '/' + nombre_nodo
+                            camino_paradero = camino_paradero + '/' + nombre_nodo
+
+                        elif nombre_nodo[:2] == 'M-' and metro_inicial != '':
+                            metro_final = nombre_nodo
+
+                            camino = camino + '/' + metro_final
+                            camino_paradero = camino_paradero + '/' + metro_final
+
+                            metro_inicial = metro_final
+                            metro_final = ''
+                            serv_metro = ''
+
+                        # si no es metro
+                        else:
+                            camino = camino + '/' + nombre_nodo
+                            camino_paradero = camino_paradero + '/' + nombre_nodo
+
+                # si el nodo no es un paradero (posee paradero/servicio)
+                else:
+
+                    tipo_nodo_actual = 'servicio'
+                    frecuencia_arco = self.g.es[
+                        self.g.get_eid(self.g.vs.find(name2=nodo_anterior).index, self.g.vs.find(name2=nombre_nodo).index,
+                                  directed=True, error=True)]['frecuencia']
+
+                    #si es arco de subida a bus
+                    if frecuencia_arco < float('inf') and metro_inicial == '':
+                        prob_arco = frecuencia_arco / frecuencia_total
+                        prob_camino = prob_camino * prob_arco
+                        servicio = nombre_nodo.split("/")[1]
+                        camino = camino + '/' + servicio
+
+                    #si es arco de subida a metro
+                    if metro_inicial != '' and metro_final == '':
+                        servicio = nombre_nodo.split("/")[1]
+                        serv_metro = servicio
+                        serv_metro = serv_metro.replace('V', '')
+                        serv_metro = serv_metro.replace('R', '')
+                        serv_metro = serv_metro.replace('-', '')
+                        serv_metro = serv_metro.replace('I', '')
+                        camino = camino + '/' + serv_metro
+
+                nodo_anterior = nombre_nodo
+
+                tipo_nodo_anterior = tipo_nodo_actual
+
+            lista_caminos.append(camino)
+        return lista_caminos
+
+    def find_all_paths(self, start, end, maxlen=None, mode='OUT'):
+        def find_all_paths_aux(adjlist, start, end, path, maxlen=None):
+            path = path + [start]
+            if start == end:
+                return [path]
+            paths = []
+            if maxlen is None or len(path) <= maxlen:
+                for node in adjlist[start] - set(path):
+                    paths.extend(find_all_paths_aux(adjlist, node, end, path, maxlen))
+            return paths
+
+        adjlist = [set(self._hyperpath.neighbors(node, mode=mode)) for node in xrange(self._hyperpath.vcount())]
+        all_paths = []
+        start = start if type(start) is list else [start]
+        end = end if type(end) is list else [end]
+        for s in start:
+            for e in end:
+                all_paths.extend(find_all_paths_aux(adjlist, s, e, [], maxlen))
+        return all_paths
 
     def get_elemental_paths(self):
 
@@ -32,6 +171,7 @@ class Hyperpath:
         self._hyperpath.vs["color"] = [color_dict[tipo] for tipo in self._hyperpath.vs["tipo"]]
         plot(self._hyperpath, bbox=(1000, 800), margin=20)
 
+    #este metodo arroja un grafo igual al original puesto que es la hiper-ruta desde todos los origenes al destino
     def _build_hyperpath(self, g, destination, transfer_penalty, waiting_penalty):
 
         if not isinstance(g, Graph):
@@ -60,13 +200,18 @@ class Hyperpath:
         heap.insertar((n_destination, 0))
 
         while len(S) != len(g.vs):
-
             # el nodo seleccionado no debe estar en S
             while True:
                 nodo_seleccionado = heap.extraer()
+                print(nodo_seleccionado)
+                if nodo_seleccionado is None:
+                    break
                 a = nodo_seleccionado[0]
                 if a not in S:
                     break
+
+            if nodo_seleccionado is None:
+                break
 
             S.append(a)
 
@@ -75,7 +220,7 @@ class Hyperpath:
                 desde = j
 
                 # tiempo del arco evaluado
-                tpo_arco = g.es[g.get_eid(desde, a, directed=True, error=True)]['tpo_viaje']
+                tpo_arco = float(g.es[g.get_eid(desde, a, directed=True, error=True)]['tpo_viaje'])
                 tpo_nodo_a = min(g.vs[a]["tau"], g.vs[a]["tau_inf"])
                 t_colita = tpo_arco + tpo_nodo_a
 
@@ -84,7 +229,7 @@ class Hyperpath:
                     t_colita = t_colita + transfer_penalty
 
                 # frecuencia del arco, al inicio toma valor cero
-                frec_arco = g.es[g.get_eid(desde, a, directed=True, error=True)]['frecuencia']
+                frec_arco = float(g.es[g.get_eid(desde, a, directed=True, error=True)]['frecuencia'])
 
                 # si es arco sin tiempo de espera
                 if frec_arco == float('inf') and t_colita < g.vs[desde]["tau_inf"]:
@@ -95,15 +240,14 @@ class Hyperpath:
                 # si es arco con espera
                 if frec_arco < float('inf') and t_colita < g.vs[desde]["tau"]:
 
-                    if ((g.vs[desde]["frecuencia"]) == 0 and (g.vs[desde]["tau"]) == float('inf')):
-                        g.vs[desde]["tau"] = (waiting_penalty + frec_arco * t_colita) / float(
-                            ((g.vs[desde]["frecuencia"]) + frec_arco))
+                    if (float(g.vs[desde]["frecuencia"]) == 0 and float(g.vs[desde]["tau"]) == float('inf')):
+                        g.vs[desde]["tau"] = (waiting_penalty + frec_arco * t_colita) / float(((g.vs[desde]["frecuencia"]) + frec_arco))
 
                     else:
-                        g.vs[desde]["tau"] = ((g.vs[desde]["frecuencia"]) * (
-                        g.vs[desde]["tau"]) + frec_arco * t_colita) / ((g.vs[desde]["frecuencia"]) + frec_arco)
+                        g.vs[desde]["tau"] = (float(g.vs[desde]["frecuencia"]) * (
+                        g.vs[desde]["tau"]) + frec_arco * t_colita) / (float(g.vs[desde]["frecuencia"]) + frec_arco)
 
-                    g.vs[desde]["frecuencia"] = ((g.vs[desde]["frecuencia"]) + frec_arco)
+                    g.vs[desde]["frecuencia"] = (float(g.vs[desde]["frecuencia"]) + frec_arco)
 
                     conj_paradero[desde].append(((desde, a), t_colita))
 
@@ -114,10 +258,10 @@ class Hyperpath:
                     if elemento[1] > g.vs[desde]["tau"]:
                         conj_paradero[desde].remove(elemento)
 
-                        frecuencia_arco = g.es[g.get_eid(elemento[0][0], elemento[0][1], directed=True, error=True)][
-                            'frecuencia']
-                        frecuencia_nodo = g.vs[elemento[0][0]]["frecuencia"]
-                        tau_nodo = g.vs[elemento[0][0]]["tau"]
+                        frecuencia_arco = float(g.es[g.get_eid(elemento[0][0], elemento[0][1], directed=True, error=True)][
+                            'frecuencia'])
+                        frecuencia_nodo = float(g.vs[elemento[0][0]]["frecuencia"])
+                        tau_nodo = float(g.vs[elemento[0][0]]["tau"])
                         tarco_colita = elemento[1]
 
                         g.vs[desde]["tau"] = (frecuencia_nodo * tau_nodo - frecuencia_arco * tarco_colita) / (
