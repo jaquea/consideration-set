@@ -43,45 +43,7 @@ viajes=viajes_p
 
 
 print('genere los viajes')
-'''
-df_paraderos = pd.read_csv('C:\Users\jacke\Desktop\ConsolidadoParadas.csv')
-df_metro = pd.read_csv('C:\Users\jacke\Desktop\Diccionario-EstacionesMetro.csv')
-df_metro_reducido = pd.read_csv('C:\Users\jacke\Desktop\metro_stations.csv', delimiter=";") #diccionario que formo leonel
 
-radio = 100
-
-paraderos_coord_dic = defaultdict(list)
-traduccion_metro = defaultdict(str)
-paraderos_serv = defaultdict(int)
-
-#genero el diccionario que contiene la estacion y el codigo asignado por leonel
-for idx, row in df_metro_reducido.iterrows():
-    codigo = row['codigo']
-    estacion = row['estacion']
-    traduccion_metro[estacion] = codigo
-    paraderos_serv[estacion] = 0
-
-#genero diccionario que contiene las coordenadas de ubicacion de los paraderos
-for idx, row in df_paraderos.iterrows():
-    codigo_paradero = row['Codigo paradero TS']
-    x = row['x']
-    y = row['y']
-    paraderos_coord_dic[codigo_paradero] = (x,y)
-    paraderos_serv[codigo_paradero] = 0
-
-#print(paraderos_coord_dic)
-
-df_metro['x'] = df_metro[['LATITUD', 'LONGITUD']].apply(lambda x: round(utm.from_latlon(x[0], x[1])[0],2), axis = 1)
-df_metro['y'] = df_metro[['LATITUD', 'LONGITUD']].apply(lambda x: round(utm.from_latlon(x[0], x[1])[1],2), axis = 1)
-
-for idx, row in df_metro.iterrows():
-    estacion = row['ESTANDAR']
-    x = row['x']
-    y = row['y']
-    if estacion in traduccion_metro:
-        est_trad = traduccion_metro[estacion]
-        paraderos_coord_dic[est_trad] = (x, y)
-'''
 #dump_file = open('paraderos_coord_dic', 'rb')
 #paraderos_coord_dic = pickle.load(dump_file)
 #dump_file.close()
@@ -372,25 +334,36 @@ hiperruta_proporcion = defaultdict(lambda: defaultdict (lambda: defaultdict (flo
 itinerario_minimo_proporcion = defaultdict(lambda: defaultdict (lambda: defaultdict (float)))
 ruta_minima_proporcion = defaultdict(lambda: defaultdict (lambda: defaultdict (float)))
 
+dump_file1 = open('grafo.igraph', 'rb')
+g = pickle.load(dump_file1)
+dump_file1.close()
+
 cont = 0
 for destino in viajes:
     cont += 1
     print(destino, cont)
 
     # cargar grafo desde archivo
-    dump_file1 = open('grafo.igraph', 'rb')
-    g = pickle.load(dump_file1)
-    dump_file1.close()
+
     q = hyperpath(g, destino)
-    n_destino = q.vs.find(name2=destino).index
+
+    hyperpath_obj = Hyperpath(g, destination=destino, transfer_penalty=16,
+                              waiting_penalty=2)
+
+    destination_index = hyperpath_obj._hyperpath.vs.find(name2=destino).index
 
     for ori in viajes[destino]:
+
         tpo_mas_corto = 1000
 
         for origen in paradero_cercano_dic[ori]:
             print(origen)
             if origen not in q.vs["name2"]:
                 continue
+
+            origin_index = hyperpath_obj._hyperpath.vs.find(name2=origen).index
+            path_set = hyperpath_obj.find_all_paths(origin_index, destination_index, maxlen=None, mode='OUT')
+            format_path = hyperpath_obj.format_paths(path_set)
 
             n_origen = q.vs.find(name2=origen).index
             caminos = find_all_paths(q, n_origen, n_destino, mode='OUT', maxlen=None)
