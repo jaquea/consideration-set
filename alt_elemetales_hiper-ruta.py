@@ -11,49 +11,24 @@ import csv
 import pandas as pd
 import json
 
-with open('C:\Users\jacke\Desktop\info_servicios.json') as data_file:
-    data = json.loads(data_file.read())
-
-df = pd.DataFrame.from_dict(data, orient='columns')
-
-df= df[(df['servicio']=='L5-R')]
-
-for idx, row in df.iterrows():
-    frec_nom = row['frec_nom']/60
-    paradas = row['paradas'] #lista
-    sentido = row['sentido']
-    servicio = str(row['servicio'])
-    servicio_user = row['servicio_user']
-    t_ADATRAP = row['t_ADATRAP'] #lista
-    t_GTFS = row['t_GTFS'] #lista
-    vertice_anterior = ''
-
-    print('ver',paradas, frec_nom, t_ADATRAP, t_GTFS)
-
-
-
-dump_file3 = open('hiperruta_minimo.pkl', 'rb')
+dump_file3 = open('tmp\\hiperruta_minimo.pkl', 'rb')
 hiperruta_minimo = dill.load(dump_file3)
 dump_file3.close()
 
-dump_file1 = open('grafo.igraph', 'rb')
+dump_file1 = open('tmp\\grafo.igraph', 'rb')
 g = pickle.load(dump_file1)
 dump_file1.close()
 
-dump_file2 = open('tiempos.pkl', 'rb')
+dump_file2 = open('tmp\\tiempos.pkl', 'rb')
 dict_tiempos = dill.load(dump_file2)
 dump_file2.close()
 
-dump_file2 = open('paradero_cercano_dic.pkl', 'rb')
+dump_file2 = open('tmp\\paradero_cercano_dic.pkl', 'rb')
 paradero_cercano_dic = dill.load(dump_file2)
 dump_file2.close()
 
 dump_file3 = open('frecuencias.pkl', 'rb')
 dict_frecuencia = dill.load(dump_file3)
-dump_file3.close()
-
-dump_file3 = open('paraderos_coord_dic.pkl', 'rb')
-paraderos_coord_dic = dill.load(dump_file3)
 dump_file3.close()
 
 dump_file2 = open('viajes_procesados.pkl', 'rb')

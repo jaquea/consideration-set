@@ -1,6 +1,11 @@
 from igraph import *
 from HeapBinaria import HeapBinaria
 
+import pickle
+import time
+
+import dill
+
 # class GraphBuilder:
 #
 #     @staticmethod
@@ -15,126 +20,179 @@ class Hyperpath:
         self.transfer_penalty = transfer_penalty
         self.waiting_penalty = waiting_penalty
         self._hyperpath = self._build_hyperpath(grafo, destination, transfer_penalty, waiting_penalty)
+        self.destination_index = self._hyperpath.vs.find(name2=self.destination).index
 
-    def format_paths(self, path_set):
+    def format_paths(self, path):
 
-        lista_caminos = []
+        prob_camino = 1
+        camino = ''
+        camino_paradero = ''
+        metro_inicial = ''
+        metro_final = ''
+        n_iteracion = 0
+        tipo_nodo_anterior = ''
+        ultimo_nodo = path[-1]
+        nodo_anterior = ''
+        n_paradero = 0
 
-        for j in path_set:
-            prob_camino = 1
-            camino = ''
-            camino_paradero = ''
-            metro_inicial = ''
-            metro_final = ''
-            n_iteracion = 0
-            tipo_nodo_anterior = ''
-            ultimo_nodo = j[-1]
-            nodo_anterior = ''
+        for n in path:
+            n_iteracion += 1
 
-            for n in j:
-                n_iteracion += 1
+            # si el nodo actual es un paradero
+            nombre_nodo = self._hyperpath.vs[n]['name2']
+            indice_nodo_actual = self.g.vs.find(name2=nombre_nodo).index
+            if (self.g.vs["tipo"][indice_nodo_actual]) == 'paradero':
 
-                # si el nodo actual es un paradero
-                nombre_nodo = self._hyperpath.vs[n]['name2']
-                indice_nodo_actual = self.g.vs.find(name2=nombre_nodo).index
-                if (self.g.vs["tipo"][indice_nodo_actual]) == 'paradero':
+                tipo_nodo_actual = 'paradero'
+                frecuencia_total = self.g.vs[indice_nodo_actual]["frecuencia"]
 
-                    tipo_nodo_actual = 'paradero'
-                    frecuencia_total = self.g.vs[indice_nodo_actual]["frecuencia"]
+                # si el camino esta vacio agrego el primer nodo al string camino
+                if camino == '':
+                    n_paradero += 1
 
-                    # si el camino esta vacio agrego el primer nodo al string camino
-                    if camino == '':
+                    camino = nombre_nodo
+                    camino_paradero = nombre_nodo
+                    if nombre_nodo[:2] == 'M-':
+                        metro_inicial = nombre_nodo
 
-                        camino = nombre_nodo
-                        camino_paradero = nombre_nodo
-                        if nombre_nodo[:2] == 'M-':
-                            metro_inicial = nombre_nodo
+                # si el camino no esta vacio, es la segunda iteracion y el nodo anterior es igual al actual por caminata
+                elif (n_iteracion == 2 and tipo_nodo_actual == tipo_nodo_anterior):
+                    camino = nombre_nodo
+                    camino_paradero = nombre_nodo
+                    metro_inicial = ''
+                    if nombre_nodo[:2] == 'M-':
+                        metro_inicial = nombre_nodo
 
-                    # si el camino no esta vacio, es la segunda iteracion y el nodo anterior es igual al actual por caminata
-                    elif (n_iteracion == 2 and tipo_nodo_actual == tipo_nodo_anterior):
-                        # print('entre 2')
-                        camino = nombre_nodo
-                        camino_paradero = nombre_nodo
-                        metro_inicial = ''
-                        if nombre_nodo[:2] == 'M-':
-                            metro_inicial = nombre_nodo
+                # si es el ultimo nodo
+                elif (n == ultimo_nodo or self._hyperpath.vs[ultimo_nodo]['name2'] == nombre_nodo):
+                    n_paradero += 1
 
-                    # si es el ultimo nodo
-                    elif (n == ultimo_nodo or self._hyperpath.vs[ultimo_nodo]['name2'] == nombre_nodo):
-
-                        # si el nodo anterior es distinto al nodo actual
-                        if tipo_nodo_anterior != tipo_nodo_actual:
-                            # si es metro
-                            if nombre_nodo[:2] == 'M-' and metro_inicial != '':
-                                # print('entre 5')
-                                metro_final = nombre_nodo
-
-                                camino = camino + '/' + metro_final
-                                camino_paradero = camino_paradero + '/' + metro_final
-
-                                metro_final = ''
-                                metro_inicial = ''
-
-                            # si es bus
-                            else:
-                                camino = camino + '/' + nombre_nodo
-                                camino_paradero = camino_paradero + '/' + nombre_nodo
-                    # si es un nodo intermedio
-                    else:
+                    # si el nodo anterior es distinto al nodo actual
+                    if tipo_nodo_anterior != tipo_nodo_actual:
                         # si es metro
-                        # print('entre donde debo entrar')
-                        if nombre_nodo[:2] == 'M-' and metro_inicial == '':
-                            metro_inicial = nombre_nodo
-
-                            camino = camino + '/' + nombre_nodo
-                            camino_paradero = camino_paradero + '/' + nombre_nodo
-
-                        elif nombre_nodo[:2] == 'M-' and metro_inicial != '':
+                        if nombre_nodo[:2] == 'M-' and metro_inicial != '':
                             metro_final = nombre_nodo
 
                             camino = camino + '/' + metro_final
                             camino_paradero = camino_paradero + '/' + metro_final
 
-                            metro_inicial = metro_final
                             metro_final = ''
-                            serv_metro = ''
+                            metro_inicial = ''
 
-                        # si no es metro
+                        # si es bus
                         else:
                             camino = camino + '/' + nombre_nodo
                             camino_paradero = camino_paradero + '/' + nombre_nodo
-
-                # si el nodo no es un paradero (posee paradero/servicio)
+                # si es un nodo intermedio
                 else:
+                    # si es metro
+                    n_paradero += 1
+                    if nombre_nodo[:2] == 'M-' and metro_inicial == '':
+                        if n_paradero>2:
+                            ultimo_paradero = camino.split('/')[-1]
+                            camino = camino.replace('/'+ultimo_paradero, '')
 
-                    tipo_nodo_actual = 'servicio'
-                    frecuencia_arco = self.g.es[
-                        self.g.get_eid(self.g.vs.find(name2=nodo_anterior).index, self.g.vs.find(name2=nombre_nodo).index,
-                                  directed=True, error=True)]['frecuencia']
+                        metro_inicial = nombre_nodo
 
-                    #si es arco de subida a bus
-                    if frecuencia_arco < float('inf') and metro_inicial == '':
-                        prob_arco = frecuencia_arco / frecuencia_total
-                        prob_camino = prob_camino * prob_arco
-                        servicio = nombre_nodo.split("/")[1]
-                        camino = camino + '/' + servicio
+                        camino = camino + '/' + nombre_nodo
+                        camino_paradero = camino_paradero + '/' + nombre_nodo
 
-                    #si es arco de subida a metro
-                    if metro_inicial != '' and metro_final == '':
-                        servicio = nombre_nodo.split("/")[1]
-                        serv_metro = servicio
-                        serv_metro = serv_metro.replace('V', '')
-                        serv_metro = serv_metro.replace('R', '')
-                        serv_metro = serv_metro.replace('-', '')
-                        serv_metro = serv_metro.replace('I', '')
-                        camino = camino + '/' + serv_metro
+                    elif nombre_nodo[:2] == 'M-' and metro_inicial != '':
+                        metro_final = nombre_nodo
 
-                nodo_anterior = nombre_nodo
+                        camino = camino + '/' + metro_final
+                        camino_paradero = camino_paradero + '/' + metro_final
 
-                tipo_nodo_anterior = tipo_nodo_actual
+                        metro_inicial = metro_final
+                        metro_final = ''
+                        serv_metro = ''
 
-            lista_caminos.append(camino)
-        return lista_caminos
+                    # si no es metro
+                    else:
+                        if n_paradero>2:
+                            ultimo_paradero = camino.split('/')[-1]
+                            camino = camino.replace('/'+ultimo_paradero, '')
+                        camino = camino + '/' + nombre_nodo
+                        camino_paradero = camino_paradero + '/' + nombre_nodo
+
+            # si el nodo es un servicio (posee paradero/servicio)
+            else:
+                n_paradero = 0
+                tipo_nodo_actual = 'servicio'
+                frecuencia_arco = self.g.es[self.g.get_eid(self.g.vs.find(name2=nodo_anterior).index, self.g.vs.find(name2=nombre_nodo).index,
+                              directed=True, error=True)]['frecuencia']
+
+                #si es arco de subida a bus
+                if frecuencia_arco < float('inf') and metro_inicial == '':
+                    prob_arco = frecuencia_arco / frecuencia_total
+                    prob_camino = prob_camino * prob_arco
+                    servicio = nombre_nodo.split("/")[1]
+                    camino = camino + '/' + servicio
+
+                #si es arco de subida a metro
+                if metro_inicial != '' and metro_final == '' and tipo_nodo_anterior != 'servicio':
+                    servicio = nombre_nodo.split("/")[1]
+                    serv_metro = servicio
+                    serv_metro = serv_metro.replace('V', '')
+                    serv_metro = serv_metro.replace('R', '')
+                    serv_metro = serv_metro.replace('-', '')
+                    serv_metro = serv_metro.replace('I', '')
+                    camino = camino + '/' + serv_metro
+
+            nodo_anterior = nombre_nodo
+
+            tipo_nodo_anterior = tipo_nodo_actual
+
+            print(camino, n_paradero)
+
+        return camino, camino_paradero, prob_camino
+
+    def get_services_per_stages(self, origin, paradero_cercano_dic):
+
+        Dict_caminos_etapa = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(list))))
+
+        for origen in paradero_cercano_dic[origin]:
+
+            if origen not in self._hyperpath.vs["name2"]:
+                continue
+
+            origin_index = self._hyperpath.vs.find(name2=origen).index
+
+            path_set = self.find_all_paths(origin_index, self.destination_index, maxlen=None, mode='OUT')
+
+            for path in path_set:
+                tipo_nodo_anterior = ''
+                nodo_anterior = ''
+                paradero_anterior = ''
+                for n in path:
+                    # si el nodo actual es un paradero
+                    nombre_nodo = self._hyperpath.vs[n]['name2']
+
+                    indice_nodo_actual = self.g.vs.find(name2=nombre_nodo).index
+
+                    if (self.g.vs["tipo"][indice_nodo_actual]) == 'paradero':
+
+                        tipo_nodo_actual = 'paradero'
+
+                    # si el nodo es un servicio (posee paradero/servicio)
+                    else:
+
+                        tipo_nodo_actual = 'servicio'
+
+                    if tipo_nodo_actual == 'paradero' and tipo_nodo_anterior == 'servicio':
+
+                        if len(nodo_anterior.split("/")) > 1:
+                            if nodo_anterior.split("/")[1] not in Dict_caminos_etapa[origin][self.destination][paradero_anterior][nombre_nodo]:
+                                Dict_caminos_etapa[origin][self.destination][paradero_anterior][nombre_nodo].append(nodo_anterior.split("/")[1])
+
+                    if tipo_nodo_actual == 'paradero':
+                        paradero_anterior = nombre_nodo
+
+                    nodo_anterior = nombre_nodo
+
+                    tipo_nodo_anterior = tipo_nodo_actual
+
+        return Dict_caminos_etapa
 
     def find_all_paths(self, start, end, maxlen=None, mode='OUT'):
         def find_all_paths_aux(adjlist, start, end, path, maxlen=None):
@@ -156,13 +214,158 @@ class Hyperpath:
                 all_paths.extend(find_all_paths_aux(adjlist, s, e, [], maxlen))
         return all_paths
 
-    def get_elemental_paths(self):
+    def get_elemental_paths(self, origin, destination, paradero_cercano_dic):
 
-        return []
+        Dict_caminos = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+        hiperruta_minimo = defaultdict(lambda: defaultdict(list))
+        hiperruta_proporcion = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
 
-    def get_aggregated_paths(self):
+        for origen in paradero_cercano_dic[origin]:
 
-        return []
+            if origen not in self._hyperpath.vs["name2"]:
+                continue
+
+            origin_index = self._hyperpath.vs.find(name2=origen).index
+
+            path_set = self.find_all_paths(origin_index, self.destination_index, maxlen=None, mode='OUT')
+
+            for j in path_set:
+
+                camino = self.format_paths(j)[0]
+                camino_paradero = self.format_paths(j)[1]
+                prob_camino = self.format_paths(j)[2]
+
+                if camino not in Dict_caminos[origin][destination][camino_paradero]:
+                    Dict_caminos[origin][destination][camino_paradero].append(camino)
+                    hiperruta_minimo[origin][destination].append(camino)
+
+                if camino not in hiperruta_proporcion[origin][destination]:
+                    hiperruta_proporcion[origin][destination][camino] = prob_camino
+
+        return Dict_caminos, hiperruta_minimo, hiperruta_proporcion
+
+    def get_all_shortest_paths(self, origin, paradero_cercano_dic, hiperruta_proporcion):
+
+        tpo_mas_corto = float('inf')
+        itinerario_minimo = defaultdict(lambda: defaultdict(list))
+        itinerario_minimo_proporcion = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
+
+        for origen in paradero_cercano_dic[origin]:
+
+            if origen not in self._hyperpath.vs["name2"]:
+                continue
+
+            origin_index = self._hyperpath.vs.find(name2=origen).index
+
+            path_set = self._hyperpath.get_all_shortest_paths(origin_index, to=self.destination_index, weights=self._hyperpath.es["peso"], mode=OUT)
+            tpo_camino = self._hyperpath.shortest_paths_dijkstra(source=origin_index, target=self.destination_index, weights=self._hyperpath.es["peso"], mode=OUT)[0][0]
+
+            path = []
+            for j in path_set:
+                camino = self.format_paths(j)[0]
+                path.append(camino)
+
+            if (tpo_camino < tpo_mas_corto):
+                itinerario_minimo[origin][self.destination] = path
+                tpo_mas_corto = tpo_camino
+
+            elif (tpo_camino == tpo_mas_corto):
+                for j in path:
+                    if j not in itinerario_minimo[origin][self.destination]:
+                        itinerario_minimo[origin][self.destination].append(j)
+
+        for o in itinerario_minimo:
+            for d in itinerario_minimo[o]:
+                total = 0
+                for c in itinerario_minimo[o][d]:
+                    total += hiperruta_proporcion[o][d][c]
+
+                for c in itinerario_minimo[o][d]:
+                    itinerario_minimo_proporcion[o][d][c] = hiperruta_proporcion[o][d][c] / total
+
+        return itinerario_minimo, itinerario_minimo_proporcion
+
+    def get_aggregate_paths(self, origin, Dict_caminos, Dict_caminos_etapa, dict_tiempos, dict_frecuencia, hiperruta_proporcion):
+
+        ruta_minima = defaultdict(lambda: defaultdict(list))
+        servicios_dict = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
+        ruta_minima_proporcion = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
+
+        tpo_ruta_agregada_minima = float('inf')
+
+        for c in Dict_caminos[origin][self.destination]:
+            camin = c.split('/')
+
+            for elemento in Dict_caminos[origin][self.destination][c]:
+                elem = elemento.split('/')
+                for e in elem:
+                    if e not in camin:
+                        servicios_dict[origin][self.destination][c].append(e)
+
+            for cam_paradero in Dict_caminos[origin][self.destination]:
+                paraderos = cam_paradero.split('/')
+                par_anterior = ''
+                serv_anteriores = []
+                tpo_total = 0
+                lista_servicios = []
+
+                for p in paraderos:
+                    tpo_espera = 0
+                    tpo_etapa = 0
+
+                    # si es el primer paradero del camino
+                    if par_anterior == '':
+
+                        # recorro los nodos del grafo q
+                        for i in self._hyperpath.vs["name2"]:
+                            # si es un nodo servicio y el paradero corresponde al evaluado
+                            if len(i.split('/')) > 1 and i.split('/')[0] == p and i.split('/')[1] in servicios_dict[origin][self.destination][cam_paradero]:
+                                # agrego a servicios anteriores el servicio
+                                serv_anteriores.append(i.split('/')[1])
+
+                    # si no es el primer paradero del camino
+                    else:
+                        #caso en que el paradero es metro
+                        if p[:2] == 'M-' and par_anterior[:2] == 'M-':
+                            n_destino = self._hyperpath.vs.find(name2=p).index
+                            n_origen = self._hyperpath.vs.find(name2=par_anterior).index
+
+                            tpo_etapa = self._hyperpath.shortest_paths_dijkstra(source=n_origen, target=n_destino, weights=self._hyperpath.es["peso"], mode=OUT)[0][0]
+                            tpo_espera = -1
+
+                        else:
+
+                            if par_anterior in Dict_caminos_etapa[origin][self.destination] and p in Dict_caminos_etapa[origin][self.destination][par_anterior]:
+
+                                for s in Dict_caminos_etapa[origin][self.destination][par_anterior][p]:
+                                    frecuencia = dict_frecuencia[s][p]
+                                    tpo_espera += dict_frecuencia[s][p]
+                                    tpo_etapa += (dict_tiempos[s][p] - dict_tiempos[s][par_anterior]) * frecuencia
+
+                        if tpo_espera > 0:
+                            tpo_total += (1 / tpo_espera) + (tpo_etapa / tpo_espera)
+
+                        elif tpo_espera == -1:
+                            tpo_total += tpo_etapa
+
+                    par_anterior = p
+
+                if tpo_total < tpo_ruta_agregada_minima:
+                    tpo_ruta_agregada_minima = tpo_total
+                    ruta_agregada_minima = cam_paradero
+
+            ruta_minima[origin][self.destination] = Dict_caminos[origin][self.destination][ruta_agregada_minima]
+
+        for o in ruta_minima:
+            for d in ruta_minima[o]:
+                total = 0
+                for c in ruta_minima[o][d]:
+                    total += hiperruta_proporcion[o][d][c]
+
+                for c in ruta_minima[o][d]:
+                    ruta_minima_proporcion[o][d][c] = hiperruta_proporcion[o][d][c] / total
+
+        return ruta_minima, ruta_minima_proporcion
 
     def plot_hyperpath(self):
         """ muestra una imagen de la hiper-ruta """
@@ -203,7 +406,7 @@ class Hyperpath:
             # el nodo seleccionado no debe estar en S
             while True:
                 nodo_seleccionado = heap.extraer()
-                print(nodo_seleccionado)
+
                 if nodo_seleccionado is None:
                     break
                 a = nodo_seleccionado[0]
@@ -372,9 +575,7 @@ class Hyperpath:
 # a = Hyperpath(graph_obj, 1)
 # a.get_aggregated_paths()
 # a.get_elemental_paths()
-# print(a.travel_time)
-# print(a.g)
-# print(a.destination)
+#
 #
 # g = Graph(directed=True)
 # g.add_vertex(name='nodo 1', name2='nodo 1', tipo='paradero')

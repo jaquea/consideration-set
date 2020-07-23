@@ -3,8 +3,11 @@ import time
 
 import dill
 from igraph import *
+from collections import defaultdict
 
 from HeapBinaria import HeapBinaria
+
+
 
 start_time = time.time()
 

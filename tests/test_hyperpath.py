@@ -23,7 +23,7 @@ class TestHyperpath(unittest.TestCase):
         self.g.add_vertex(name='8', name2='O/morado', tipo='servicio')
 
         # nodos servicio que pasan por T
-        self.g.add_vertex(name='9', name2='T//naranjo', tipo='servicio')
+        self.g.add_vertex(name='9', name2='T/naranjo', tipo='servicio')
         self.g.add_vertex(name='10', name2='T/amarillo', tipo='servicio')
         self.g.add_vertex(name='11', name2='T/azul', tipo='servicio')
         self.g.add_vertex(name='14', name2='T/rojo', tipo='servicio')
@@ -32,6 +32,47 @@ class TestHyperpath(unittest.TestCase):
         self.g.add_vertex(name='15', name2='D/verde', tipo='servicio')
         self.g.add_vertex(name='16', name2='D/morado', tipo='servicio')
         self.g.add_vertex(name='17', name2='D/rojo', tipo='servicio')
+
+        #diccionario tiempo y frecuencia
+
+        self.dict_tiempos = defaultdict(lambda: defaultdict(lambda: -1))
+        self.dict_frecuencia = defaultdict(lambda: defaultdict(lambda: 0))
+
+        self.dict_frecuencia['naranjo']['O'] = float(5.0/60)
+        self.dict_frecuencia['naranjo']['T'] = float(5.0 / 60)
+
+        self.dict_tiempos['naranjo']['O'] = 0
+        self.dict_tiempos['naranjo']['T'] = 6
+
+        self.dict_frecuencia['amarillo']['O'] = float(5.0 / 60)
+        self.dict_frecuencia['amarillo']['T'] = float(5.0 / 60)
+
+        self.dict_tiempos['amarillo']['O'] = 0
+        self.dict_tiempos['amarillo']['T'] = 5.5
+
+        self.dict_frecuencia['azul']['O'] = float(5.0 / 60)
+        self.dict_frecuencia['azul']['T'] = float(5.0 / 60)
+
+        self.dict_tiempos['azul']['O'] = 0
+        self.dict_tiempos['azul']['T'] = 5
+
+        self.dict_frecuencia['rojo']['T'] = float(10.0 / 60)
+        self.dict_frecuencia['rojo']['D'] = float(10.0 / 60)
+
+        self.dict_tiempos['rojo']['T'] = 0
+        self.dict_tiempos['rojo']['D'] = 10
+
+        self.dict_frecuencia['verde']['O'] = float(10.0 / 60)
+        self.dict_frecuencia['verde']['D'] = float(10.0 / 60)
+
+        self.dict_tiempos['verde']['O'] = 0
+        self.dict_tiempos['verde']['D'] = 25
+
+        self.dict_frecuencia['morado']['O'] = float(10.0 / 60)
+        self.dict_frecuencia['morado']['D'] = float(10.0 / 60)
+
+        self.dict_tiempos['morado']['O'] = 0
+        self.dict_tiempos['morado']['D'] = 45
 
         # arcos subida en O
         self.g.add_edge('1', '4', frecuencia=float(5.0/60), tpo_viaje=0, peso=(60.0 / 5) + 0)
@@ -93,6 +134,13 @@ class TestHyperpath(unittest.TestCase):
 
         self.destination = 'D'
 
+        self.paradero_cercano_dic = defaultdict(list)
+
+        for v in self.g.vs:
+            self.paradero_cercano_dic[v['name2']] = v['name2']
+
+
+
 
     def test_grafo_2_nodos(self):
         """Hyper-ruta de grafo con 2 nodos que debería retornar el mismo grafo"""
@@ -125,48 +173,77 @@ class TestHyperpath(unittest.TestCase):
         self.assertEqual(hyperpath_obj.waiting_penalty, waiting_penalty)
         self.assertEqual(len(hyperpath_obj._hyperpath.vs), len(self.g.vs))
 
-    def test_format_paths(self):
-        """grafo de ejemplo paper jacque se testea el formateo de los caminos sin penalizacion alguna"""
-        transfer_penalty = 0
-        waiting_penalty = 1
-        hyperpath_obj = Hyperpath(self.g, destination=self.destination, transfer_penalty=transfer_penalty,
-                                  waiting_penalty=waiting_penalty)
-        origin_index = hyperpath_obj._hyperpath.vs.find(name2='O').index
-        destination_index = hyperpath_obj._hyperpath.vs.find(name2=self.destination).index
-
-        path_set = hyperpath_obj.find_all_paths(origin_index, destination_index, maxlen=None, mode='OUT')
-        format_path = hyperpath_obj.format_paths(path_set)
-        list_expected_result = ['O/naranjo/T/rojo/D', 'O/amarillo/T/rojo/D', 'O/azul/T/rojo/D', 'O/verde/D']
-        self.assertListEqual(format_path, list_expected_result)
-
     def test_format_paths_transfer_penalty(self):
         """grafo de ejemplo paper jacque se testea el formateo de los caminos penalizando trasbordo"""
         transfer_penalty = 16
         waiting_penalty = 1
         hyperpath_obj = Hyperpath(self.g, destination=self.destination, transfer_penalty=transfer_penalty,
                                   waiting_penalty=waiting_penalty)
-        origin_index = hyperpath_obj._hyperpath.vs.find(name2='O').index
-        destination_index = hyperpath_obj._hyperpath.vs.find(name2=self.destination).index
-
-        path_set = hyperpath_obj.find_all_paths(origin_index, destination_index, maxlen=None, mode='OUT')
-        format_path = hyperpath_obj.format_paths(path_set)
+        Dict_caminos, hiperruta_minimo, hiperruta_proporcion = hyperpath_obj.get_elemental_paths('O', self.destination,
+                                                                                                 self.paradero_cercano_dic)
         list_expected_result = ['O/verde/D']
-        self.assertListEqual(format_path, list_expected_result)
+        self.assertListEqual(hiperruta_minimo['O']['D'], list_expected_result)
 
-    def test_format_paths_waiting_penalty(self):
+    def test_get_elemental_paths(self):
         """grafo de ejemplo paper jacque se testea el formateo de los caminos penalizando tiempo de espera"""
         transfer_penalty = 0
         waiting_penalty = 10
         hyperpath_obj = Hyperpath(self.g, destination=self.destination, transfer_penalty=transfer_penalty,
                                   waiting_penalty=waiting_penalty)
-        origin_index = hyperpath_obj._hyperpath.vs.find(name2='O').index
-        destination_index = hyperpath_obj._hyperpath.vs.find(name2=self.destination).index
-
-        path_set = hyperpath_obj.find_all_paths(origin_index, destination_index, maxlen=None, mode='OUT')
-        format_path = hyperpath_obj.format_paths(path_set)
+        Dict_caminos, hiperruta_minimo, hiperruta_proporcion = hyperpath_obj.get_elemental_paths('O', self.destination,
+                                                                                                 self.paradero_cercano_dic)
         list_expected_result = ['O/verde/D', 'O/morado/D']
-        self.assertListEqual(format_path, list_expected_result)
+        self.assertListEqual(hiperruta_minimo['O']['D'], list_expected_result)
 
+    def test_get_elemental_paths(self):
+        transfer_penalty = 0
+        waiting_penalty = 2
+        hyperpath_obj = Hyperpath(self.g, destination=self.destination, transfer_penalty=transfer_penalty,
+                                  waiting_penalty=waiting_penalty)
+        Dict_caminos, hiperruta_minimo, hiperruta_proporcion = hyperpath_obj.get_elemental_paths('O', self.destination, self.paradero_cercano_dic)
+
+        list_expected_result = ['O/naranjo/T/rojo/D', 'O/amarillo/T/rojo/D', 'O/azul/T/rojo/D']
+        self.assertListEqual(Dict_caminos['O']['D']['O/T/D'], list_expected_result)
+
+        list_expected_result = ['O/verde/D']
+        self.assertListEqual(Dict_caminos['O']['D']['O/D'], list_expected_result)
+
+        list_expected_result = ['O/naranjo/T/rojo/D', 'O/amarillo/T/rojo/D', 'O/azul/T/rojo/D', 'O/verde/D']
+        self.assertListEqual(hiperruta_minimo['O']['D'], list_expected_result)
+
+        self.assertEqual(hiperruta_proporcion['O']['D']['O/verde/D'], 0.4)
+        self.assertEqual(hiperruta_proporcion['O']['D']['O/azul/T/rojo/D'], 0.2)
+        self.assertEqual(hiperruta_proporcion['O']['D']['O/naranjo/T/rojo/D'], 0.2)
+        self.assertEqual(hiperruta_proporcion['O']['D']['O/amarillo/T/rojo/D'], 0.2)
+
+    def test_get_all_shortest_paths(self):
+
+        transfer_penalty = 0
+        waiting_penalty = 1
+        hyperpath_obj = Hyperpath(self.g, destination=self.destination, transfer_penalty=transfer_penalty,
+                                  waiting_penalty=waiting_penalty)
+
+        Dict_caminos, hiperruta_minimo, hiperruta_proporcion = hyperpath_obj.get_elemental_paths('O', self.destination,
+                                                                                                 self.paradero_cercano_dic)
+
+        camino_minimo, itinerario_minimo_proporcion = hyperpath_obj.get_all_shortest_paths('O', self.paradero_cercano_dic, hiperruta_proporcion)
+
+        self.assertListEqual(camino_minimo['O']['D'], ['O/verde/D'])
+
+    def test_get_aggregate_paths(self):
+
+        transfer_penalty = 0
+        waiting_penalty = 1
+        hyperpath_obj = Hyperpath(self.g, destination=self.destination, transfer_penalty=transfer_penalty,
+                                  waiting_penalty=waiting_penalty)
+
+        Dict_caminos, hiperruta_minimo, hiperruta_proporcion = hyperpath_obj.get_elemental_paths('O', self.destination, self.paradero_cercano_dic)
+
+        Dict_caminos_etapa = hyperpath_obj.get_services_per_stages('O', self.paradero_cercano_dic)
+
+        ruta_minima, ruta_minima_proporcion = hyperpath_obj.get_aggregate_paths('O', Dict_caminos, Dict_caminos_etapa, self.dict_tiempos, self.dict_frecuencia, hiperruta_proporcion)
+
+        self.assertListEqual(ruta_minima['O']['D'], ['O/naranjo/T/rojo/D', 'O/amarillo/T/rojo/D', 'O/azul/T/rojo/D'])
 
 
 

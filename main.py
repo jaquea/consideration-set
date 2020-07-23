@@ -1,6 +1,9 @@
 from igraph import *
 import pickle
 import dill
+from collections import defaultdict
+import csv
+import io
 
 from hyperpath import Hyperpath
 
@@ -9,8 +12,19 @@ dump_file2 = open('tmp\\viajes_procesados.pkl', 'rb')
 viajes = dill.load(dump_file2)
 dump_file2.close()
 
+dump_file2 = open('tmp\\tiempos.pkl', 'rb')
+dict_tiempos = dill.load(dump_file2)
+dump_file2.close()
+
+dump_file3 = open('tmp\\frecuencias.pkl', 'rb')
+dict_frecuencia = dill.load(dump_file3)
+dump_file3.close()
+
 viajes_p = defaultdict(lambda:defaultdict(lambda:defaultdict(lambda:0)))
-viajes_p = viajes['T-8-71-PO-33']['T-20-68-NS-5']
+viajes_p['M-TB']['T-20-200-SN-25'] = viajes['M-TB']['T-20-200-SN-25']
+
+viajes = defaultdict(lambda:defaultdict(lambda:defaultdict(lambda:0)))
+viajes = viajes_p
 
 #genero y leo grafo
 dump_file1 = open('tmp\\grafo.igraph', 'rb')
@@ -20,8 +34,11 @@ dump_file1.close()
 dump_file2 = open('tmp\\paradero_cercano_dic.pkl', 'rb')
 paradero_cercano_dic = dill.load(dump_file2)
 dump_file2.close()
-
-hiperruta_minimo = defaultdict(lambda: defaultdict (list))
+'''
+with open('tmp\\resumen.csv', mode='w') as csvFile:
+    writer = csv.writer(csvFile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    writer.writerow(['origen', 'destino', 'total_viajes', 'viajes_en_hiperruta', 'viajes_en_ruta_min', 'viajes_en_it_min', 'largo_hiperruta', 'largo_ruta_minima', 'itinerarios_minimos', 'largo_caminos_usados', 'p_correcta_itinerario_minimo', 'p_correcta_hiperruta', 'p_correcta_ruta_minima'])
+'''
 
 cont = 0
 for destino in viajes:
@@ -31,29 +48,60 @@ for destino in viajes:
     hyperpath_obj = Hyperpath(g, destination=destino, transfer_penalty=16,
                               waiting_penalty=2)
 
-    hiper_ruta = hyperpath_obj._hyperpath
-
-    destination_index = hiper_ruta.vs.find(name2=destino).index
 
     for ori in viajes[destino]:
 
-        tpo_mas_corto = 1000
+        viajes_en_it_min = 0
+        viajes_en_hiperruta = 0
+        viajes_en_ruta_min = 0
+        total_viajes = 0
 
-        for origen in paradero_cercano_dic[ori]:
-            print(origen)
+        p_correcta_itinerario_minimo = 0
+        p_correcta_hiperruta = 0
+        p_correcta_ruta_minima = 0
 
-            if origen not in hiper_ruta.vs["name2"]:
-                continue
+        Dict_caminos, hiperruta_minimo, hiperruta_proporcion = hyperpath_obj.get_elemental_paths(ori, destino, paradero_cercano_dic)
+        itinerario_minimo, itinerario_minimo_proporcion = hyperpath_obj.get_all_shortest_paths(ori, paradero_cercano_dic, hiperruta_proporcion)
+        Dict_caminos_etapa = hyperpath_obj.get_services_per_stages(ori, paradero_cercano_dic)
+        ruta_minima, ruta_minima_proporcion = hyperpath_obj.get_aggregate_paths(ori, Dict_caminos, Dict_caminos_etapa, dict_tiempos, dict_frecuencia, hiperruta_proporcion)
 
-            origin_index = hiper_ruta.vs.find(name2=origen).index
+        print('hiperruta_minimo', hiperruta_minimo)
+        itinerarios_minimos = itinerario_minimo[ori][destino]
+        largo_hiperruta = len(hiperruta_minimo[ori][destino])
+        largo_caminos_usados = len(viajes[destino][ori])
+        largo_ruta_minima = len(ruta_minima[ori][destino])
 
-            path_set = hyperpath_obj.find_all_paths(origin_index, destination_index, maxlen=None, mode='OUT')
+        for camino in viajes[destino][ori]:
+            n_viajes = viajes[destino][ori][camino]
+            total_viajes += n_viajes
 
-            format_path = hyperpath_obj.format_paths(path_set)
+        for camino in viajes[destino][ori]:
+            n_viajes = viajes[destino][ori][camino]
+            p_o = float(n_viajes) / float(total_viajes)
 
-            for camino in format_path:
+            if camino in itinerario_minimo[ori][destino]:
+                viajes_en_it_min += n_viajes
 
-                if camino not in hiperruta_minimo[ori][destino]:
-                    hiperruta_minimo[ori][destino].append(camino)
+                p_e = itinerario_minimo_proporcion[ori][destino][camino]
+                p_correcta_itinerario_minimo += min(p_e,p_o)
 
-print(hiperruta_minimo)
+            if camino in hiperruta_minimo[ori][destino]:
+                viajes_en_hiperruta += n_viajes
+
+                p_e = hiperruta_proporcion[ori][destino][camino]
+                p_correcta_hiperruta += min(p_e, p_o)
+
+
+            if camino in ruta_minima[ori][destino]:
+                viajes_en_ruta_min += n_viajes
+
+                p_e = ruta_minima_proporcion[ori][destino][camino]
+                p_correcta_ruta_minima += min(p_e, p_o)
+'''
+        with io.open('tmp\\resumen.csv', 'a', newline='') as csvFile:
+            writer = csv.writer(csvFile)
+            writer.writerow([ori, destino, total_viajes, viajes_en_hiperruta, viajes_en_ruta_min, viajes_en_it_min,
+                         largo_hiperruta, largo_ruta_minima, itinerarios_minimos, largo_caminos_usados,
+                         p_correcta_itinerario_minimo, p_correcta_hiperruta, p_correcta_ruta_minima])
+csvFile.close()
+'''
