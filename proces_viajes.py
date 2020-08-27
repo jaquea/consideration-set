@@ -3,26 +3,31 @@
 #también genera un diccionario de viajes reales, viajes_reales[origen][destino][alternativa]
 #se crean las alternativa de viaje utilizada y se asigna un indice de par OD
 
-from pandas import DataFrame, read_csv
-import matplotlib.pyplot as plt
-import pandas as pd #this is how I usually import pandas
-import sys #only needed to determine Python version number
-import matplotlib.pyplot as plt
-import numpy as np
-from datetime import datetime, date
-from datetime import timedelta
-from dateutil.parser import parse
 import glob
-import math
-import psycopg2
-from collections import defaultdict
-#import dask.dataframe as dd
-import os
+import json
+import pickle
 import time
-import multiprocessing as mp
-import functools
-import re
+from collections import defaultdict
 
+import dill
+import numpy as np
+import pandas as pd  # this is how I usually import pandas
+
+with open('inputs\\info_servicios.json') as data_file:
+    data = json.loads(data_file.read())
+
+df = pd.DataFrame.from_dict(data, orient='columns')
+dict_servicio_llave_usuario = defaultdict(list)
+dict_servicio_llave_codigoTS = defaultdict(list)
+
+for idx, row in df.iterrows():
+    sentido = row['sentido']
+    servicio = str(row['servicio'])
+    servicio_user = row['servicio_user']
+    if servicio_user+"-"+sentido not in dict_servicio_llave_codigoTS[servicio]:
+        dict_servicio_llave_codigoTS[servicio].append(servicio_user+"-"+sentido)
+    if servicio not in dict_servicio_llave_usuario[servicio_user+"-"+sentido]:
+        dict_servicio_llave_usuario[servicio_user+"-"+sentido].append(servicio)
 
 # Funcion para leer todos los archivo csv del directorio indicado
 # Los archivo deben tener extensión .csv
@@ -65,7 +70,7 @@ df = df[((df['tviaje_min'] > 4))].reset_index(drop=True)
 
 print('viajes con tpo total de viaje superior a 4 min=', df.count()[0])
 
-df_metro_reducido = pd.read_csv('C:\Users\jacke\Desktop\metro_stations.csv', delimiter=";") #diccionario que formo leonel
+df_metro_reducido = pd.read_csv('inputs\\metro_stations.csv', delimiter=";") #diccionario que formo leonel
 
 dict_metro = defaultdict(str)
 
@@ -74,6 +79,7 @@ for idx, row in df_metro_reducido.iterrows():
     estacion = row['estacion']
     dict_metro[estacion] = codigo
 
+#funcion que permite generar la ruta utilizando solo paraderos
 def ODparaderos(x):
 
     if x[0]==1:
@@ -113,45 +119,118 @@ df['idx_OD_paradero'] = df[['netapa', 'paraderosubida', 'paraderobajada','tipotr
 
 def alternativas(x):
 
+    #se busca servicio formato transantiago de la etapa 1 en diccionario para transformar en servicio formato usuario
+    if x[3] in dict_servicio_llave_codigoTS:
+        x[3] = dict_servicio_llave_codigoTS[x[3]][0]
+
+    #(T506 06I pasa a T506 00I)si el servicio no se encuentra en el diccionario se trasnforma el texto quitandole el numero variante interno para ver si ahora encuentra el servicio en el diccionario
+    else:
+        servicio_variable = x[3].split(" ")
+        servicio_modificado = ''
+
+        if len(servicio_variable) == 3:
+            servicio_modificado = ''.join([servicio_variable[0], ' ', servicio_variable[1], ' ', '00', servicio_variable[2][-1]])
+
+        elif len(servicio_variable) == 2:
+            servicio_modificado = ''.join([servicio_variable[0], ' ', '00', servicio_variable[1][-1]])
+
+        else:
+            servicio_modificado = ''
+
+        print(servicio_modificado)
+        if servicio_modificado in dict_servicio_llave_codigoTS:
+            x[3] = dict_servicio_llave_codigoTS[servicio_modificado][0]
+
+    #mismo paso previo para la etapa 2
+    if x[6] in dict_servicio_llave_codigoTS:
+        x[6] = dict_servicio_llave_codigoTS[x[6]][0]
+
+    # (T506 06I pasa a T506 00I)si el servicio no se encuentra en el diccionario se trasnforma el texto quitandole el numero variante interno para ver si ahora encuentra el servicio en el diccionario
+    else:
+        servicio_variable = x[6].split(" ")
+        servicio_modificado = ''
+
+        if len(servicio_variable) == 3:
+            servicio_modificado = ''.join(
+                [servicio_variable[0], ' ', servicio_variable[1], ' ', '00', servicio_variable[2][-1]])
+
+        elif len(servicio_variable) == 2:
+            servicio_modificado = ''.join([servicio_variable[0], ' ', '00', servicio_variable[1][-1]])
+
+        else:
+            servicio_modificado = ''
+
+        if servicio_modificado in dict_servicio_llave_codigoTS:
+            x[6] = dict_servicio_llave_codigoTS[servicio_modificado][0]
+
+    #mismo paso previo para el servicio de la etapa 3
+    if x[9] in dict_servicio_llave_codigoTS:
+        x[9] = dict_servicio_llave_codigoTS[x[9]][0]
+
+    else:
+        servicio_variable = x[9].split(" ")
+        servicio_modificado = ''
+
+        if len(servicio_variable) == 3:
+            servicio_modificado = ''.join(
+                [servicio_variable[0], ' ', servicio_variable[1], ' ', '00', servicio_variable[2][-1]])
+
+        elif len(servicio_variable) == 2:
+            servicio_modificado = ''.join([servicio_variable[0], ' ', '00', servicio_variable[1][-1]])
+
+        else:
+            servicio_modificado = ''
+
+        if servicio_modificado in dict_servicio_llave_codigoTS:
+            x[9] = dict_servicio_llave_codigoTS[servicio_modificado][0]
+
+
+    #si el servicio de la primera etapa es metro
     if x[10] == 'METRO':
         x[1] = dict_metro[x[1]]
         x[2] = dict_metro[x[2]]
+        cadena_alternativa = ''.join([x[1],'/',x[2]])
 
-    if x[11] == 'METRO':
-        x[4] = dict_metro[x[4]]
-        x[5] = dict_metro[x[5]]
-
-    if x[12] == 'METRO':
-        x[7] = dict_metro[x[7]]
-        x[8] = dict_metro[x[8]]
+    else:
+        cadena_alternativa = ''.join([x[1],'/',x[3],'/',x[2]])
 
     if x[0] == 1:
-        return ''.join([x[1],'/',x[3],'/',x[2]])
+        return cadena_alternativa
 
-    elif x[0]==2:
-        if x[2]==x[4]:
-            return ''.join([x[1],'/',x[3],'/',x[4],'/',x[6],'/',x[5]])
+    else:
 
-        else:
-            return ''.join([x[1], '/', x[3], '/', x[2], '/', x[4] , '/' , x[6] , '/' , x[5]])
-
-    elif x[0]==3:
-        if x[2] == x[4]:
-            if x[5]==x[7]:
-                return ''.join([x[1], '/', x[3], '/', x[4] , '/' , x[6] , '/' , x[5] , '/' , x[9] , '/' , x[8]])
-
-            else:
-                return ''.join([x[1], '/' , x[3] , '/' , x[4] , '/' , x[6] , '/' , x[5] , '/' , x[7] , '/' , x[9] , '/' , x[8]])
-
+        #si el servicio de la etapa 2 es metro
+        if x[11] == 'METRO':
+            x[4] = dict_metro[x[4]]
+            x[5] = dict_metro[x[5]]
+            cadena_alternativa = ''.join([cadena_alternativa, '/', x[4], '/', x[5]])
 
         else:
-            if x[5]==x[4]:
-                return ''.join([x[1] , '/' , x[3] , '/' , x[2] , '/' , x[4] , '/' , x[6] , '/' , x[5] , '/' , x[9] , '/' , x[8]])
+            if x[2] == x[4]:
+                cadena_alternativa = ''.join([cadena_alternativa, '/', x[6], '/', x[5]])
 
             else:
-                return ''.join([x[1] , '/' , x[3] , '/' , x[2] , '/' , x[4] , '/' , x[6] , '/' , x[5] , '/' , x[7] , '/' , x[9] , '/' , x[8]])
+                cadena_alternativa = ''.join([cadena_alternativa, '/', x[4], '/', x[6], '/', x[5]])
 
+        if x[0] == 2:
 
+            return cadena_alternativa
+
+        else:
+
+            if x[12] == 'METRO':
+                x[7] = dict_metro[x[7]]
+                x[8] = dict_metro[x[8]]
+                cadena_alternativa = ''.join([cadena_alternativa, '/', x[7], '/', x[8]])
+
+            else:
+                if x[5] == x[7]:
+                    cadena_alternativa = ''.join([cadena_alternativa, '/', x[9], '/', x[8]])
+
+                else:
+                    cadena_alternativa = ''.join([cadena_alternativa, '/', x[7], '/', x[9], '/', x[8]])
+
+            return cadena_alternativa
 
 df['alternativa_viaje']=df[['netapa',
                             'paraderosubida_1era','paraderobajada_1era','serv_1era_etapa',
@@ -184,16 +263,23 @@ for idx, row in df.iterrows():
     destino = OD_paradero[1]
     viajes_reales[origen][destino][alternativa] += 1
 
-import dill
 
-dump_file2 = open('viajes.pkl', 'wb')
+dump_file1 = open('tmp\\dict_servicio_llave_codigoTS.pkl', 'wb')
+pickle.dump(dict_servicio_llave_codigoTS, dump_file1)
+dump_file1.close()
+
+dump_file1 = open('tmp\\dict_servicio_llave_usuario.pkl', 'wb')
+pickle.dump(dict_servicio_llave_usuario, dump_file1)
+dump_file1.close()
+
+dump_file2 = open('tmp\\viajes.pkl', 'wb')
 dill.dump(viajes, dump_file2)
 dump_file2.close()
 
-dump_file2 = open('viajes_reales.pkl', 'wb')
+dump_file2 = open('tmp\\viajes_reales.pkl', 'wb')
 dill.dump(viajes_reales, dump_file2)
 dump_file2.close()
 
-df_eval = df_sin_ZP[(df_sin_ZP['id']!='-') & ((df_sin_ZP['netapa']>1)|((df_sin_ZP['netapa']==1) & (df_sin_ZP['tipotransporte_1era']!='METRO')))].groupby(['idx_OD_paradero'])['idx_OD_paradero'].size().nlargest(100)
+#df_eval = df_sin_ZP[(df_sin_ZP['id']!='-') & ((df_sin_ZP['netapa']>1)|((df_sin_ZP['netapa']==1) & (df_sin_ZP['tipotransporte_1era']!='METRO')))].groupby(['idx_OD_paradero'])['idx_OD_paradero'].size().nlargest(100)
 
-print(df_eval)
+#print(df_eval)

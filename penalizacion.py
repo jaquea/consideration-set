@@ -414,7 +414,7 @@ caminata_final = 0
 
 viajes = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
 
-dump_file2 = open('viajes_procesados.pkl', 'rb')
+dump_file2 = open('tmp/viajes_procesados.pkl', 'rb')
 viajes = dill.load(dump_file2)
 dump_file2.close()
 

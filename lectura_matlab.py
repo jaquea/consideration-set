@@ -9,19 +9,19 @@ from time import time
 import pickle
 import math
 import utm
+import dill
 import matplotlib.pyplot as pl
 #se leen los datos y se genera el grafo, es el primer codigo que se debe correr
 heap = HeapBinaria()
 
 ###diccionarios de localizacion geografica paraderos y estaciones de metro
-df_paraderos = pd.read_csv('C:\Users\jacke\Desktop\ConsolidadoParadas.csv')
-df_metro = pd.read_csv('C:\Users\jacke\Desktop\Diccionario-EstacionesMetro.csv')
-df_metro_reducido = pd.read_csv('C:\Users\jacke\Desktop\metro_stations.csv', delimiter=";") #diccionario que formo leonel
+df_paraderos = pd.read_csv('inputs\\ConsolidadoParadas.csv')
+df_metro = pd.read_csv('inputs\\Diccionario-EstacionesMetro.csv')
+df_metro_reducido = pd.read_csv('inputs\\metro_stations.csv', delimiter=";") #diccionario que formo leonel
 
 radio = 100
 
 paraderos_coord_dic = defaultdict(list)
-#metro_coord_dic = defaultdict(list)
 traduccion_metro = defaultdict(str)
 paraderos_serv = defaultdict(int)
 
@@ -38,8 +38,6 @@ for idx, row in df_paraderos.iterrows():
     paraderos_coord_dic[codigo_paradero] = (x,y)
     paraderos_serv[codigo_paradero] = 0
 
-#print(paraderos_coord_dic)
-
 df_metro['x'] = df_metro[['LATITUD', 'LONGITUD']].apply(lambda x: round(utm.from_latlon(x[0], x[1])[0],2), axis = 1)
 df_metro['y'] = df_metro[['LATITUD', 'LONGITUD']].apply(lambda x: round(utm.from_latlon(x[0], x[1])[1],2), axis = 1)
 
@@ -51,7 +49,7 @@ for idx, row in df_metro.iterrows():
         est_trad = traduccion_metro[estacion]
         paraderos_coord_dic[est_trad] = (x, y)
 
-dump_file = open('paraderos_coord_dic', 'wb')
+dump_file = open('tmp\\paraderos_coord_dic', 'wb')
 pickle.dump(paraderos_coord_dic, dump_file)
 dump_file.close()
 
@@ -72,14 +70,12 @@ for llave1 in paraderos_coord_dic:
 
 print('ya genere arcos de caminata')
 
-with open('C:\Users\jacke\Desktop\info_servicios.json') as data_file:
+with open('inputs\\info_servicios.json') as data_file:
     data = json.loads(data_file.read())
 
 df = pd.DataFrame.from_dict(data, orient='columns')
 
 #df= df[(df['servicio']=='T405 00I') | (df['servicio']=='L1-I')]
-
-print(df.head())
 
 dict_paradas = defaultdict(int)
 dict_tiempos = defaultdict(lambda: defaultdict(lambda: -1))
@@ -141,13 +137,9 @@ for idx, row in df.iterrows():
 
         #print('arcos subida:', dict_paradas[str(par[0])], contador_vertice, frec_nom, 0)
 
-
         #arco bajada
         arcos.append((contador_vertice, dict_paradas[str(par[0])], float('inf'), 0, vertice, str(par[0])))
         contador_arco += 1
-
-
-
         #print('arcos bajada:', contador_vertice, dict_paradas[str(par[0])], 0, 0)
 
         #arcos de servicio
@@ -161,9 +153,6 @@ for idx, row in df.iterrows():
                 arcos.append((contador_vertice_anterior, contador_vertice, float('inf'), t_GTFS[cont_par][0], vertice_anterior, vertice))
                 contador_arco += 1
 
-
-
-
             #print('arcos servicio:', contador_vertice - 1, contador_vertice, float('inf'), t_ADATRAP[cont_par][0])
 
         cont_par += 1
@@ -176,9 +165,6 @@ for idx, row in df.iterrows():
 
 t_ini=time()
 g = Graph(directed=True)
-#g.add_vertices(70464)
-
-#print(vertices)
 
 for v in vertices:
     g.add_vertex(name=str(v[0]), name2=v[1], tipo=v[2])
@@ -213,10 +199,17 @@ for a in arcos:
 
     #print('arco',str(a[0]), str(a[1]), a[2], a[3])
 
+df_hacinamiento_metro = pd.read_csv('inputs\\dict_hacinamiento_metro.csv', delimiter=";")
+dict_hacinamiento_metro = defaultdict(lambda: defaultdict(lambda: -1))
 
+for idx, row in df_hacinamiento_metro.iterrows():
+    codigo = row['linea']
+    estacion = row['estacion']
+    dict_hacinamiento_metro[codigo][estacion] = (row['carga_al_salir_el_tren'], row['carga_en_anden'])
 
-import dill
-
+dump_file2 = open('tmp\\dict_hacinamiento_metro.pkl', 'wb')
+dill.dump(dict_hacinamiento_metro, dump_file2)
+dump_file2.close()
 
 t_fin=time()
 
@@ -225,19 +218,23 @@ t_ejecucion = t_fin - t_ini
 print(t_ejecucion)
 
 # guardar grafo en un archivo
-dump_file1 = open('grafo.igraph', 'wb')
+dump_file1 = open('tmp\\grafo.igraph', 'wb')
 pickle.dump(g, dump_file1)
 dump_file1.close()
 
-dump_file2 = open('tiempos.pkl', 'wb')
+dump_file1 = open('tmp\\paradero_cercano_dic.pkl', 'wb')
+pickle.dump(paradero_cercano_dic, dump_file1)
+dump_file1.close()
+
+dump_file2 = open('tmp\\tiempos.pkl', 'wb')
 dill.dump(dict_tiempos, dump_file2)
 dump_file2.close()
 
-dump_file3 = open('frecuencias.pkl', 'wb')
+dump_file3 = open('tmp\\frecuencias.pkl', 'wb')
 dill.dump(dict_frecuencia, dump_file3)
 dump_file3.close()
 
-dump_file2 = open('paraderos_coord_dic.pkl', 'wb')
+dump_file2 = open('tmp\\paraderos_coord_dic.pkl', 'wb')
 dill.dump(paraderos_coord_dic, dump_file2)
 dump_file2.close()
 

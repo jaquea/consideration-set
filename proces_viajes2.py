@@ -5,12 +5,16 @@ import utm
 import dill
 import pandas as pd #this is how I usually import pandas
 from collections import defaultdict
+import csv
 
-dump_file2 = open('viajes.pkl', 'rb')
+from random import seed
+from random import randint
+
+dump_file2 = open('tmp\\viajes.pkl', 'rb')
 viajes = dill.load(dump_file2)
 dump_file2.close()
 
-dump_file2 = open('viajes_reales.pkl', 'rb')
+dump_file2 = open('tmp\\viajes_reales.pkl', 'rb')
 viajes_reales = dill.load(dump_file2)
 dump_file2.close()
 
@@ -29,21 +33,42 @@ print(len(viajes))
 
 lista_de_viajes= []
 
-for origen in viajes:
-    for destino in viajes[origen]:
-        n = sum([viajes[origen][destino][camino] for camino in viajes[origen][destino]])
-        dic_viaje = dict(origen=origen, destino=destino, n=n)
-        lista_de_viajes.append(dic_viaje)
+with open('outputs\\resumen_pares_OD.csv', 'wb') as csvFile:
+    writer = csv.writer(csvFile)
+    writer.writerow(['origen', 'destino', 'total_viajes'])
+
+    for origen in viajes:
+        for destino in viajes[origen]:
+            n = sum([viajes[origen][destino][camino] for camino in viajes[origen][destino]])
+            dic_viaje = dict(origen=origen, destino=destino, n=n)
+            lista_de_viajes.append(dic_viaje)
+            writer.writerow([origen, destino, n])
 
 lista_de_viajes.sort(key=lambda x: x['n'], reverse=True)
 
-# los 10 con más viajes
-print(lista_de_viajes[:100])
+answer = set()
+sampleSize = 150
+answerSize = 0
+lista = []
 
+seed(150)
+
+while answerSize < sampleSize:
+    r = randint(0,803)
+    if r not in answer:
+        answerSize += 1
+        answer.add(r)
+        parOD = lista_de_viajes[r]
+        lista.append(parOD)
+
+lista_de_viajes = lista[:20]
+
+print(len(lista_de_viajes))
+print(lista_de_viajes)
 
 ###diccionarios de localizacion geografica paraderos y estaciones de metro
-df_paraderos = pd.read_csv('C:\Users\jacke\Desktop\ConsolidadoParadas.csv')
-df_metro = pd.read_csv('C:\Users\jacke\Desktop\Diccionario-EstacionesMetro.csv')
+df_paraderos = pd.read_csv('inputs\ConsolidadoParadas.csv')
+df_metro = pd.read_csv('inputs\Diccionario-EstacionesMetro.csv')
 
 radio = 100
 
@@ -57,7 +82,7 @@ for idx, row in df_paraderos.iterrows():
 
 # print(paraderos_coord_dic)
 
-df_metro_reducido = pd.read_csv('C:\Users\jacke\Desktop\metro_stations.csv', delimiter=";") #diccionario que formo leonel
+df_metro_reducido = pd.read_csv('inputs\metro_stations.csv', delimiter=";") #diccionario que formo leonel
 
 #se genera diccionario para asignar coordenadas de estaciones de metro
 dict_metro = defaultdict(str)
@@ -74,7 +99,7 @@ for idx, row in df_metro.iterrows():
     estacion = row['ESTANDAR']
     x = row['x']
     y = row['y']
-    paraderos_coord_dic[dict_metro[estacion]] = (x, y)
+    paraderos_coord_dic[dict_metro[estacion]] = (x,y)
 
 paradero_cercano_dic = defaultdict(list)
 for llave1 in paraderos_coord_dic:
@@ -88,20 +113,19 @@ for llave1 in paraderos_coord_dic:
 
         if dist <= radio and llave2 not in paradero_cercano_dic[llave1]:
             paradero_cercano_dic[llave1].append(llave2)
-# recorre paraderos de micro para guardar localización
+
+print paradero_cercano_dic['T-13-54-SN-60']
 
 viajes_procesados = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
 
 cont = 0
-for elemento in lista_de_viajes[:100]:
+for elemento in lista_de_viajes:
     cont +=1
     origen = elemento['origen']
     destino = elemento['destino']
     print(cont)
     grupo_subida = paradero_cercano_dic[origen]
-    grupo_subida.append(origen)
     grupo_bajada = paradero_cercano_dic[destino]
-    grupo_bajada.append(destino)
     tuplas = [(x, y) for x in grupo_subida for y in grupo_bajada]
 
     for par in tuplas:
@@ -109,13 +133,14 @@ for elemento in lista_de_viajes[:100]:
             for camino in viajes_reales[par[0]][par[1]]:
                 viajes_procesados[destino][origen][camino] = viajes_reales[par[0]][par[1]][camino]
 
-print(viajes_procesados['E-20-205-SN-65']['T-34-313-SN-35'])
+print paradero_cercano_dic['T-13-54-SN-60']
 
-dump_file2 = open('viajes_procesados.pkl', 'wb')
+dump_file2 = open('tmp\\viajes_procesados.pkl', 'wb')
 dill.dump(viajes_procesados, dump_file2)
 dump_file2.close()
 
-dump_file2 = open('paradero_cercano_dic.pkl', 'wb')
+dump_file2 = open('tmp\\paradero_cercano_dic.pkl', 'wb')
 dill.dump(paradero_cercano_dic, dump_file2)
 dump_file2.close()
 
+print(len(viajes_procesados))

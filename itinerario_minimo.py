@@ -14,7 +14,7 @@ dump_file2 = open('Dict_caminos.pkl', 'rb')
 Dict_caminos = dill.load(dump_file2)
 dump_file2.close()
 
-dump_file2 = open('viajes_procesados.pkl', 'rb')
+dump_file2 = open('tmp/viajes_procesados.pkl', 'rb')
 viajes = dill.load(dump_file2)
 dump_file2.close()
 
