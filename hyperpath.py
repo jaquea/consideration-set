@@ -61,6 +61,7 @@ class Hyperpath:
 
                 # si el camino no esta vacio, es la segunda iteracion y el nodo anterior es igual al actual por caminata
                 elif (n_iteracion == 2 and tipo_nodo_actual == tipo_nodo_anterior):
+                    n_paradero += 1
                     camino = nombre_nodo
                     camino_paradero = nombre_nodo
                     camino_resumido = nombre_nodo
@@ -97,6 +98,7 @@ class Hyperpath:
                             camino_paradero = camino_paradero + '/' + nombre_nodo
                 # si es un nodo intermedio
                 else:
+
                     # si es metro
                     n_paradero += 1
                     if nombre_nodo[:2] == 'M-' and metro_inicial == '':
@@ -126,9 +128,8 @@ class Hyperpath:
 
                         metro_inicial = metro_final
                         metro_final = ''
-                        serv_metro = ''
 
-                    # si no es metro
+                    # si es bus
                     else:
                         if n_paradero > 2:
                             ultimo_paradero = camino.split('/')[-1]

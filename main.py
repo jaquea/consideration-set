@@ -52,16 +52,13 @@ with open('outputs\\resumen_geografico_OD.csv', 'wb') as csvFile:
     for origen in viajes:
         for destino in viajes[origen]:
             writer.writerow([origen, destino, paraderos_coord_dic[origen][0], paraderos_coord_dic[origen][1], paraderos_coord_dic[destino][0], paraderos_coord_dic[destino][1]])
-#print(viajes['E-20-185-NS-5'])
+
 viajes_p = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
 #viajes_p['M-TB']['T-13-104-PO-15'] = viajes['M-TB']['T-13-104-PO-15']
 #viajes_p['M-TB']['T-13-54-SN-60'] = viajes['M-TB']['T-13-54-SN-60']
-#viajes_p['T-30-243-NS-5'] = viajes['T-30-243-NS-5']
-#viajes = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
-#viajes = viajes_p
-
-#print(viajes)
-
+viajes_p['L-33-52-155-PO']['L-33-52-5-OP'] = viajes['L-33-52-155-PO']['L-33-52-5-OP']
+viajes = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
+viajes = viajes_p
 
 
 files_obj = Files(viajes, g, paradero_cercano_dic, dict_servicio_llave_codigoTS)

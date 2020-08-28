@@ -94,6 +94,7 @@ class Files:
 
                     writer.writerow(row)
 
+        print('hiperruta_minimo', hiperruta_minimo)
         return hiperruta_minimo_camino_desglosado, cant_max_alternativas_hiperruta, hiperruta_minimo
 
     def real_trips(self):
