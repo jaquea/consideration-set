@@ -1,23 +1,22 @@
 # -*- coding: utf-8 -*-
-import scipy.io
 import json
-from pprint import pprint
-import pandas as pd
-from igraph import *
-from HeapBinaria import HeapBinaria
-from time import time
 import pickle
-import math
-import utm
+from time import time
+
 import dill
-import matplotlib.pyplot as pl
-#se leen los datos y se genera el grafo, es el primer codigo que se debe correr
+import pandas as pd
+import utm
+from igraph import *
+
+from HeapBinaria import HeapBinaria
+
+# se leen los datos y se genera el grafo, es el primer codigo que se debe correr
 heap = HeapBinaria()
 
 ###diccionarios de localizacion geografica paraderos y estaciones de metro
 df_paraderos = pd.read_csv('inputs\\ConsolidadoParadas.csv')
 df_metro = pd.read_csv('inputs\\Diccionario-EstacionesMetro.csv')
-df_metro_reducido = pd.read_csv('inputs\\metro_stations.csv', delimiter=";") #diccionario que formo leonel
+df_metro_reducido = pd.read_csv('inputs\\metro_stations.csv', delimiter=";")  # diccionario que formo leonel
 
 radio = 100
 
@@ -35,11 +34,11 @@ for idx, row in df_paraderos.iterrows():
     codigo_paradero = row['Codigo paradero TS']
     x = row['x']
     y = row['y']
-    paraderos_coord_dic[codigo_paradero] = (x,y)
+    paraderos_coord_dic[codigo_paradero] = (x, y)
     paraderos_serv[codigo_paradero] = 0
 
-df_metro['x'] = df_metro[['LATITUD', 'LONGITUD']].apply(lambda x: round(utm.from_latlon(x[0], x[1])[0],2), axis = 1)
-df_metro['y'] = df_metro[['LATITUD', 'LONGITUD']].apply(lambda x: round(utm.from_latlon(x[0], x[1])[1],2), axis = 1)
+df_metro['x'] = df_metro[['LATITUD', 'LONGITUD']].apply(lambda x: round(utm.from_latlon(x[0], x[1])[0], 2), axis=1)
+df_metro['y'] = df_metro[['LATITUD', 'LONGITUD']].apply(lambda x: round(utm.from_latlon(x[0], x[1])[1], 2), axis=1)
 
 for idx, row in df_metro.iterrows():
     estacion = row['ESTANDAR']
@@ -61,11 +60,11 @@ for llave1 in paraderos_coord_dic:
         if llave1 != llave2:
             x2 = float(paraderos_coord_dic[llave2][0])
             y2 = float(paraderos_coord_dic[llave2][1])
-            #dist = (((x1-x2)**2) + ((y1-y2)**2))**0.5
-            dist = abs(x1-x2) + abs(y1-y2)
+            # dist = (((x1-x2)**2) + ((y1-y2)**2))**0.5
+            dist = abs(x1 - x2) + abs(y1 - y2)
 
             if dist <= radio:
-                costo = dist*60/(1000*4)
+                costo = dist * 60 / (1000 * 4)
                 paradero_cercano_dic[llave1].append((llave2, costo))
 
 print('ya genere arcos de caminata')
@@ -75,7 +74,7 @@ with open('inputs\\info_servicios.json') as data_file:
 
 df = pd.DataFrame.from_dict(data, orient='columns')
 
-#df= df[(df['servicio']=='T405 00I') | (df['servicio']=='L1-I')]
+# df= df[(df['servicio']=='T405 00I') | (df['servicio']=='L1-I')]
 
 dict_paradas = defaultdict(int)
 dict_tiempos = defaultdict(lambda: defaultdict(lambda: -1))
@@ -88,15 +87,14 @@ numero = 0
 arcos = []
 vertices = []
 
-
 for idx, row in df.iterrows():
-    frec_nom = row['frec_nom']/60
-    paradas = row['paradas'] #lista
+    frec_nom = row['frec_nom'] / 60
+    paradas = row['paradas']  # lista
     sentido = row['sentido']
     servicio = str(row['servicio'])
     servicio_user = row['servicio_user']
-    t_ADATRAP = row['t_ADATRAP'] #lista
-    t_GTFS = row['t_GTFS'] #lista
+    t_ADATRAP = row['t_ADATRAP']  # lista
+    t_GTFS = row['t_GTFS']  # lista
     vertice_anterior = ''
 
     # arcos servicio
@@ -108,9 +106,9 @@ for idx, row in df.iterrows():
     for par in paradas:
         if str(par[0]) not in dict_paradas:
             dict_paradas[str(par[0])] = numero
-            numero = numero +1
+            numero = numero + 1
 
-        vertice = str(par[0])+"/"+servicio
+        vertice = str(par[0]) + "/" + servicio
 
         dict_frecuencia[servicio][str(par[0])] = float(frec_nom)
 
@@ -122,8 +120,7 @@ for idx, row in df.iterrows():
             tiempo_total += t_GTFS[cont_par][0]
             dict_tiempos[servicio][str(par[0])] = tiempo_total
 
-
-        #arco subida
+        # arco subida
         arcos.append((dict_paradas[str(par[0])], contador_vertice, frec_nom, 0, str(par[0]), vertice))
 
         if (dict_paradas[str(par[0])], str(par[0]), 'paradero') not in vertices:
@@ -134,70 +131,71 @@ for idx, row in df.iterrows():
 
         contador_arco += 1
 
+        # print('arcos subida:', dict_paradas[str(par[0])], contador_vertice, frec_nom, 0)
 
-        #print('arcos subida:', dict_paradas[str(par[0])], contador_vertice, frec_nom, 0)
-
-        #arco bajada
+        # arco bajada
         arcos.append((contador_vertice, dict_paradas[str(par[0])], float('inf'), 0, vertice, str(par[0])))
         contador_arco += 1
-        #print('arcos bajada:', contador_vertice, dict_paradas[str(par[0])], 0, 0)
+        # print('arcos bajada:', contador_vertice, dict_paradas[str(par[0])], 0, 0)
 
-        #arcos de servicio
+        # arcos de servicio
         if vertice_anterior != '':
 
-            if type(t_ADATRAP[cont_par][0])==float:
-                arcos.append((contador_vertice_anterior, contador_vertice, float('inf'), t_ADATRAP[cont_par][0], vertice_anterior, vertice))
+            if type(t_ADATRAP[cont_par][0]) == float:
+                arcos.append((contador_vertice_anterior, contador_vertice, float('inf'), t_ADATRAP[cont_par][0],
+                              vertice_anterior, vertice))
                 contador_arco += 1
 
             else:
-                arcos.append((contador_vertice_anterior, contador_vertice, float('inf'), t_GTFS[cont_par][0], vertice_anterior, vertice))
+                arcos.append((contador_vertice_anterior, contador_vertice, float('inf'), t_GTFS[cont_par][0],
+                              vertice_anterior, vertice))
                 contador_arco += 1
 
-            #print('arcos servicio:', contador_vertice - 1, contador_vertice, float('inf'), t_ADATRAP[cont_par][0])
+            # print('arcos servicio:', contador_vertice - 1, contador_vertice, float('inf'), t_ADATRAP[cont_par][0])
 
         cont_par += 1
         vertice_anterior = vertice
         contador_vertice_anterior = contador_vertice
         contador_vertice += 1
 
-#print(len(arcos), len(vertices))
+# print(len(arcos), len(vertices))
 
 
-t_ini=time()
+t_ini = time()
 g = Graph(directed=True)
 
 for v in vertices:
     g.add_vertex(name=str(v[0]), name2=v[1], tipo=v[2])
 
-    #if v[2]=='paradero' and v[1] in paradero_cercano_dic:
-        #print(v[1], 'tiene paraderos cercanos')
+    # if v[2]=='paradero' and v[1] in paradero_cercano_dic:
+    # print(v[1], 'tiene paraderos cercanos')
 
-    #else:
-        #print(v[1], 'no tiene paraderos cercanos')
+    # else:
+    # print(v[1], 'no tiene paraderos cercanos')
 
 for v in vertices:
     name = str(v[0])
     name2 = v[1]
     tipo = v[2]
 
-    #print(name, name2, tipo)
+    # print(name, name2, tipo)
 
     if tipo == 'paradero' and name2 in paradero_cercano_dic:
         for par in paradero_cercano_dic[name2]:
             vertice_cercano = par[0]
             if vertice_cercano in g.vs['name2']:
-                #print(name, name2, tipo, vertice_cercano)
+                # print(name, name2, tipo, vertice_cercano)
                 indice = g.vs.find(name2=vertice_cercano).index
-                #print(indice, name, name2, tipo, vertice_cercano)
+                # print(indice, name, name2, tipo, vertice_cercano)
                 name_par = g.vs[indice]["name"]
                 arcos.append((name, name_par, float('inf'), par[1], name2, g.vs[indice]["name2"]))
 
 for a in arcos:
-    g.add_edge(str(a[0]), str(a[1]), frecuencia= a[2], tpo_viaje=a[3], peso=(1/float(a[2]))+a[3])
+    g.add_edge(str(a[0]), str(a[1]), frecuencia=a[2], tpo_viaje=a[3], peso=(1 / float(a[2])) + a[3])
 
-    #print(a)
+    # print(a)
 
-    #print('arco',str(a[0]), str(a[1]), a[2], a[3])
+    # print('arco',str(a[0]), str(a[1]), a[2], a[3])
 
 df_hacinamiento_metro = pd.read_csv('inputs\\dict_hacinamiento_metro.csv', delimiter=";")
 dict_hacinamiento_metro = defaultdict(lambda: defaultdict(lambda: -1))
@@ -211,7 +209,7 @@ dump_file2 = open('tmp\\dict_hacinamiento_metro.pkl', 'wb')
 dill.dump(dict_hacinamiento_metro, dump_file2)
 dump_file2.close()
 
-t_fin=time()
+t_fin = time()
 
 t_ejecucion = t_fin - t_ini
 
@@ -239,102 +237,3 @@ dill.dump(paraderos_coord_dic, dump_file2)
 dump_file2.close()
 
 print('grafo guardado en archivo!')
-
-'''
-print('aqui parte nombre de los arcos')
-
-file = open("C:\Users\Jacqueline\Desktop\ParQGIS.txt", "w")
-file.write("id|tipoarco|linea")
-
-paraderos_serv_y = defaultdict(float)
-paraderos_serv_x = defaultdict(float)
-
-contador = 0
-for a in arcos:
-    print('a', a)
-    contador += 1
-    #si es arco de caminata entre paraderos
-    if a[4] in paraderos_coord_dic and a[5] in paraderos_coord_dic:
-        x_1 = float(paraderos_coord_dic[a[4]][0])
-        y_1 = float(paraderos_coord_dic[a[4]][1])
-
-        x_2 = float(paraderos_coord_dic[a[5]][0])
-        y_2 = float(paraderos_coord_dic[a[5]][1])
-
-        id = contador
-        tipoarco = 'soy arco entre paraderos'
-
-        linea = "{}|{}|LINESTRING({} {},{} {})".format(id,tipoarco,x_1,y_1,x_2,y_2)
-
-        file.write("\n" + linea)
-
-        print('soy arco entre paraderos', a[4], a[5])
-
-        pl.plot(x_1, y_1, 'ob')
-        pl.plot(x_2, y_2, 'ob')
-        pl.plot([x_1, x_2], [y_1, y_2], 'red')
-
-
-    #si es un arco de subida
-    elif a[4] in paraderos_coord_dic and a[5] not in paraderos_coord_dic:
-
-        paraderos_serv[a[4]] = float(paraderos_serv[a[4]]) + 30
-
-        x_1 = float(paraderos_coord_dic[a[4]][0])
-        y_1 = float(paraderos_coord_dic[a[4]][1])
-
-        x_2 = x_1 + float(paraderos_serv[a[4]])
-        y_2 = y_1 + float(paraderos_serv[a[4]])
-
-        paraderos_serv_y[a[5]] = y_2
-        paraderos_serv_x[a[5]] = x_2
-
-        id = contador
-        tipoarco = 'soy arco de subida'
-
-        linea = "{}|{}|LINESTRING({} {},{} {})".format(id, tipoarco, x_1, y_1, x_2, y_2)
-
-        file.write("\n" + linea)
-
-        print('soy arco de subida', a[4], x_1, y_1, a[5], x_2, y_2)
-
-        pl.plot(x_1, y_1, 'ob')
-        #pl.plot(x_2, y_2, 'p')
-        pl.plot([x_1, x_2], [y_1, y_2], 'grey')
-
-    #si es un arco de linea
-    elif a[4] not in paraderos_coord_dic and a[5] not in paraderos_coord_dic:
-
-        par1 = a[4].split("/")[0]
-        par2 = a[5].split("/")[0]
-
-        paraderos_serv[a[4]] = float(paraderos_serv[a[4]]) + 30
-
-        y_1 = float(paraderos_serv_y[a[4]])
-        x_1 = float(paraderos_serv_x[a[4]])
-
-        x_2 = float(paraderos_serv_x[a[5]])
-        y_2 = float(paraderos_serv_y[a[5]])
-
-        id = contador
-        tipoarco = 'soy arco de linea'
-
-        linea = "{}|{}|LINESTRING({} {},{} {})".format(id, tipoarco, x_1, y_1, x_2, y_2)
-
-        print('soy arco de linea', a[4], par1,  x_1, y_1, a[5], par2, x_2, y_2)
-
-        #pl.plot(x_1, y_1, 'p')
-        #pl.plot(x_2, y_2, 'p')
-        pl.plot([x_1, x_2], [y_1, y_2], 'green')
-
-
-
-
-
-    print (a)
-file.close()
-pl.show()
-
-
-
-'''
