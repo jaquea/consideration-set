@@ -190,9 +190,10 @@ def alternativas(x):
         x[1] = dict_metro[x[1]]
         x[2] = dict_metro[x[2]]
         cadena_alternativa = ''.join([x[1],'/',x[2]])
-
+        cadena_alternativa_desglosada = ''.join([x[1],'/',x[3], '/', x[2]])
     else:
         cadena_alternativa = ''.join([x[1],'/',x[3],'/',x[2]])
+        cadena_alternativa_desglosada = ''.join([x[1],'/',x[3],'/',x[2]])
 
     if x[0] == 1:
         return cadena_alternativa

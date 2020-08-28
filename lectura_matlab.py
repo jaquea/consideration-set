@@ -197,18 +197,6 @@ for a in arcos:
 
     # print('arco',str(a[0]), str(a[1]), a[2], a[3])
 
-df_hacinamiento_metro = pd.read_csv('inputs\\dict_hacinamiento_metro.csv', delimiter=";")
-dict_hacinamiento_metro = defaultdict(lambda: defaultdict(lambda: -1))
-
-for idx, row in df_hacinamiento_metro.iterrows():
-    codigo = row['linea']
-    estacion = row['estacion']
-    dict_hacinamiento_metro[codigo][estacion] = (row['carga_al_salir_el_tren'], row['carga_en_anden'])
-
-dump_file2 = open('tmp\\dict_hacinamiento_metro.pkl', 'wb')
-dill.dump(dict_hacinamiento_metro, dump_file2)
-dump_file2.close()
-
 t_fin = time()
 
 t_ejecucion = t_fin - t_ini
