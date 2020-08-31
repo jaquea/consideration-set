@@ -53,6 +53,7 @@ pickle.dump(paraderos_coord_dic, dump_file)
 dump_file.close()
 
 paradero_cercano_dic = defaultdict(list)
+paradero_cercano_dic1 = defaultdict(list)
 for llave1 in paraderos_coord_dic:
     x1 = float(paraderos_coord_dic[llave1][0])
     y1 = float(paraderos_coord_dic[llave1][1])
@@ -66,6 +67,9 @@ for llave1 in paraderos_coord_dic:
             if dist <= radio:
                 costo = dist * 60 / (1000 * 4)
                 paradero_cercano_dic[llave1].append((llave2, costo))
+
+            if dist <= radio and llave2 not in paradero_cercano_dic1[llave1]:
+                paradero_cercano_dic1[llave1].append(llave2)
 
 print('ya genere arcos de caminata')
 
@@ -86,6 +90,9 @@ numero = 0
 
 arcos = []
 vertices = []
+
+arcos_metro = []
+vertices_metro = []
 
 for idx, row in df.iterrows():
     frec_nom = row['frec_nom'] / 60
@@ -123,11 +130,21 @@ for idx, row in df.iterrows():
         # arco subida
         arcos.append((dict_paradas[str(par[0])], contador_vertice, frec_nom, 0, str(par[0]), vertice))
 
+        if str(par[0])[:2] == 'M-':
+            arcos_metro.append((dict_paradas[str(par[0])], contador_vertice, frec_nom, 0, str(par[0]), vertice))
+
+
         if (dict_paradas[str(par[0])], str(par[0]), 'paradero') not in vertices:
             vertices.append((dict_paradas[str(par[0])], str(par[0]), 'paradero'))
 
+            if str(par[0])[:2] == 'M-':
+                vertices_metro.append((dict_paradas[str(par[0])], str(par[0]), 'paradero'))
+
         if (contador_vertice, vertice, 'servicio') not in vertices:
             vertices.append((contador_vertice, vertice, 'servicio'))
+
+            if str(par[0])[:2] == 'M-':
+                vertices_metro.append((contador_vertice, vertice, 'servicio'))
 
         contador_arco += 1
 
@@ -136,6 +153,10 @@ for idx, row in df.iterrows():
         # arco bajada
         arcos.append((contador_vertice, dict_paradas[str(par[0])], float('inf'), 0, vertice, str(par[0])))
         contador_arco += 1
+
+        if str(par[0])[:2] == 'M-':
+            arcos_metro.append((contador_vertice, dict_paradas[str(par[0])], float('inf'), 0, vertice, str(par[0])))
+
         # print('arcos bajada:', contador_vertice, dict_paradas[str(par[0])], 0, 0)
 
         # arcos de servicio
@@ -146,10 +167,18 @@ for idx, row in df.iterrows():
                               vertice_anterior, vertice))
                 contador_arco += 1
 
+                if str(par[0])[:2] == 'M-':
+                    arcos_metro.append((contador_vertice_anterior, contador_vertice, float('inf'), t_ADATRAP[cont_par][0],
+                                  vertice_anterior, vertice))
+
             else:
                 arcos.append((contador_vertice_anterior, contador_vertice, float('inf'), t_GTFS[cont_par][0],
                               vertice_anterior, vertice))
                 contador_arco += 1
+
+                if str(par[0])[:2] == 'M-':
+                    arcos_metro.append((contador_vertice_anterior, contador_vertice, float('inf'), t_GTFS[cont_par][0],
+                                  vertice_anterior, vertice))
 
             # print('arcos servicio:', contador_vertice - 1, contador_vertice, float('inf'), t_ADATRAP[cont_par][0])
 
@@ -163,6 +192,7 @@ for idx, row in df.iterrows():
 
 t_ini = time()
 g = Graph(directed=True)
+g_metro = Graph(directed=True)
 
 for v in vertices:
     g.add_vertex(name=str(v[0]), name2=v[1], tipo=v[2])
@@ -172,6 +202,8 @@ for v in vertices:
 
     # else:
     # print(v[1], 'no tiene paraderos cercanos')
+for v in vertices_metro:
+    g_metro.add_vertex(name=str(v[0]), name2=v[1], tipo=v[2])
 
 for v in vertices:
     name = str(v[0])
@@ -193,6 +225,9 @@ for v in vertices:
 for a in arcos:
     g.add_edge(str(a[0]), str(a[1]), frecuencia=a[2], tpo_viaje=a[3], peso=(1 / float(a[2])) + a[3])
 
+for a in arcos_metro:
+    g_metro.add_edge(str(a[0]), str(a[1]), frecuencia=a[2], tpo_viaje=a[3], peso=(1 / float(a[2])) + a[3])
+
     # print(a)
 
     # print('arco',str(a[0]), str(a[1]), a[2], a[3])
@@ -208,8 +243,12 @@ dump_file1 = open('tmp\\grafo.igraph', 'wb')
 pickle.dump(g, dump_file1)
 dump_file1.close()
 
+dump_file1 = open('tmp\\grafo_metro.igraph', 'wb')
+pickle.dump(g_metro, dump_file1)
+dump_file1.close()
+
 dump_file1 = open('tmp\\paradero_cercano_dic.pkl', 'wb')
-pickle.dump(paradero_cercano_dic, dump_file1)
+pickle.dump(paradero_cercano_dic1, dump_file1)
 dump_file1.close()
 
 dump_file2 = open('tmp\\tiempos.pkl', 'wb')

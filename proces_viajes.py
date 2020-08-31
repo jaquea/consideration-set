@@ -10,8 +10,20 @@ import time
 from collections import defaultdict
 
 import dill
-import numpy as np
+from hyperpath import Hyperpath
 import pandas as pd  # this is how I usually import pandas
+
+dump_file2 = open('tmp\\paradero_cercano_dic.pkl', 'rb')
+paradero_cercano_dic = dill.load(dump_file2)
+dump_file2.close()
+
+dump_file1 = open('tmp\\dict_servicio_llave_codigoTS.pkl', 'rb')
+dict_servicio_llave_codigoTS = pickle.load(dump_file1)
+dump_file1.close()
+
+dump_file1 = open('tmp\\grafo.igraph', 'rb')
+g = pickle.load(dump_file1)
+dump_file1.close()
 
 with open('inputs\\info_servicios.json') as data_file:
     data = json.loads(data_file.read())
@@ -128,9 +140,11 @@ def alternativas(x):
         servicio_variable = x[3].split(" ")
         servicio_modificado = ''
 
+        # si el servicio es del estilo "T506 E0 00I"
         if len(servicio_variable) == 3:
             servicio_modificado = ''.join([servicio_variable[0], ' ', servicio_variable[1], ' ', '00', servicio_variable[2][-1]])
 
+        # si el servicio es del estilo "T314 00I"
         elif len(servicio_variable) == 2:
             servicio_modificado = ''.join([servicio_variable[0], ' ', '00', servicio_variable[1][-1]])
 
@@ -148,11 +162,9 @@ def alternativas(x):
     # (T506 06I pasa a T506 00I)si el servicio no se encuentra en el diccionario se trasnforma el texto quitandole el numero variante interno para ver si ahora encuentra el servicio en el diccionario
     else:
         servicio_variable = x[6].split(" ")
-        servicio_modificado = ''
 
         if len(servicio_variable) == 3:
-            servicio_modificado = ''.join(
-                [servicio_variable[0], ' ', servicio_variable[1], ' ', '00', servicio_variable[2][-1]])
+            servicio_modificado = ''.join([servicio_variable[0], ' ', servicio_variable[1], ' ', '00', servicio_variable[2][-1]])
 
         elif len(servicio_variable) == 2:
             servicio_modificado = ''.join([servicio_variable[0], ' ', '00', servicio_variable[1][-1]])
@@ -190,13 +202,16 @@ def alternativas(x):
         x[1] = dict_metro[x[1]]
         x[2] = dict_metro[x[2]]
         cadena_alternativa = ''.join([x[1],'/',x[2]])
-        cadena_alternativa_desglosada = ''.join([x[1],'/',x[3], '/', x[2]])
+        hyperpath_obj = Hyperpath(g, destination=x[2], transfer_penalty=16, waiting_penalty=2, paradero_cercano_dic = paradero_cercano_dic, dict_servicio_llave_codigoTS = dict_servicio_llave_codigoTS)
+        cadena_alternativa_desglosada = hyperpath_obj.get_all_shortest_paths_desglosado(x[1])[0]
     else:
         cadena_alternativa = ''.join([x[1],'/',x[3],'/',x[2]])
         cadena_alternativa_desglosada = ''.join([x[1],'/',x[3],'/',x[2]])
 
     if x[0] == 1:
-        return cadena_alternativa
+        print('cadena_alternativa', cadena_alternativa)
+        print('cadena_alternativa_desglosada', cadena_alternativa_desglosada)
+        return cadena_alternativa, cadena_alternativa_desglosada
 
     else:
 
@@ -204,34 +219,45 @@ def alternativas(x):
         if x[11] == 'METRO':
             x[4] = dict_metro[x[4]]
             x[5] = dict_metro[x[5]]
-            cadena_alternativa = ''.join([cadena_alternativa, '/', x[4], '/', x[5]])
 
+            hyperpath_obj = Hyperpath(g, destination=x[5], transfer_penalty=16, waiting_penalty=2,
+                                      paradero_cercano_dic=paradero_cercano_dic,
+                                      dict_servicio_llave_codigoTS=dict_servicio_llave_codigoTS)
+            cadena_alternativa_desglosada = ''.join([cadena_alternativa, '/', hyperpath_obj.get_all_shortest_paths_desglosado(x[4])[0]])
+            cadena_alternativa = ''.join([cadena_alternativa, '/', x[4], '/', x[5]])
         else:
             if x[2] == x[4]:
                 cadena_alternativa = ''.join([cadena_alternativa, '/', x[6], '/', x[5]])
+                cadena_alternativa_desglosada = cadena_alternativa
 
             else:
                 cadena_alternativa = ''.join([cadena_alternativa, '/', x[4], '/', x[6], '/', x[5]])
-
+                cadena_alternativa_desglosada = cadena_alternativa
         if x[0] == 2:
 
-            return cadena_alternativa
+            return cadena_alternativa, cadena_alternativa_desglosada
 
         else:
 
             if x[12] == 'METRO':
                 x[7] = dict_metro[x[7]]
                 x[8] = dict_metro[x[8]]
+
+                hyperpath_obj = Hyperpath(g, destination=x[8], transfer_penalty=16, waiting_penalty=2, paradero_cercano_dic=paradero_cercano_dic,
+                                          dict_servicio_llave_codigoTS=dict_servicio_llave_codigoTS)
+
+                cadena_alternativa_desglosada = ''.join([cadena_alternativa, '/', hyperpath_obj.get_all_shortest_paths_desglosado(x[7])[0]])
                 cadena_alternativa = ''.join([cadena_alternativa, '/', x[7], '/', x[8]])
 
             else:
                 if x[5] == x[7]:
                     cadena_alternativa = ''.join([cadena_alternativa, '/', x[9], '/', x[8]])
+                    cadena_alternativa_desglosada = cadena_alternativa
 
                 else:
                     cadena_alternativa = ''.join([cadena_alternativa, '/', x[7], '/', x[9], '/', x[8]])
-
-            return cadena_alternativa
+                    cadena_alternativa_desglosada = cadena_alternativa
+            return cadena_alternativa, cadena_alternativa_desglosada
 
 df['alternativa_viaje']=df[['netapa',
                             'paraderosubida_1era','paraderobajada_1era','serv_1era_etapa',
