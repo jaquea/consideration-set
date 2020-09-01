@@ -1,7 +1,7 @@
 from igraph import *
 
 class Atributes:
-    def __init__(self, camino, grafo):
+    def __init__(self, camino, grafo, g_metro):
         self.camino = camino
         self.g = grafo
         self.tpo_metro = 0
@@ -15,6 +15,7 @@ class Atributes:
         self.hacinamiento_metro = 0
         self.n_trasbordo_metro = 0
         self.hacinamiento_anden = 0
+        self.g_metro = g_metro
 
     def hacinamiento_metro_metodo(self, n, nodo_anterior_anterior, nodo_anterior, dict_tiempos):
 
@@ -85,7 +86,7 @@ class Atributes:
                             frecuencia += dict_frecuencia[str][nodo_anterior_anterior]
                             contador += 1
                 tpo_espera = contador / frecuencia
-                tpo_viaje = self.g.shortest_paths_dijkstra(source=n_origen, target=n_destino, weights=self.g.es["peso"],mode=OUT)[0][0] - tpo_espera
+                tpo_viaje = self.g_metro.shortest_paths_dijkstra(source=n_origen, target=n_destino, weights=self.g_metro.es["peso"],mode=OUT)[0][0] - tpo_espera
                 self.tpo_metro += tpo_viaje
 
                 if self.tpo_espera_inicial == 0:

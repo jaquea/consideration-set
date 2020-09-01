@@ -12,6 +12,7 @@ from collections import defaultdict
 import dill
 from hyperpath import Hyperpath
 import pandas as pd  # this is how I usually import pandas
+from shortest_paths import Shortest
 
 dump_file2 = open('tmp\\paradero_cercano_dic.pkl', 'rb')
 paradero_cercano_dic = dill.load(dump_file2)
@@ -202,8 +203,9 @@ def alternativas(x):
         x[1] = dict_metro[x[1]]
         x[2] = dict_metro[x[2]]
         cadena_alternativa = ''.join([x[1],'/',x[2]])
-        hyperpath_obj = Hyperpath(g, destination=x[2], transfer_penalty=16, waiting_penalty=2, paradero_cercano_dic = paradero_cercano_dic, dict_servicio_llave_codigoTS = dict_servicio_llave_codigoTS)
-        cadena_alternativa_desglosada = hyperpath_obj.get_all_shortest_paths_desglosado(x[1])[0]
+         #encuentra la ruta minima en metro
+        shortest_path = Shortest(x[1], x[2], dict_servicio_llave_codigoTS).get_all_shortest_paths_desglosado()[0]
+        cadena_alternativa_desglosada = shortest_path
     else:
         cadena_alternativa = ''.join([x[1],'/',x[3],'/',x[2]])
         cadena_alternativa_desglosada = ''.join([x[1],'/',x[3],'/',x[2]])
@@ -220,10 +222,9 @@ def alternativas(x):
             x[4] = dict_metro[x[4]]
             x[5] = dict_metro[x[5]]
 
-            hyperpath_obj = Hyperpath(g, destination=x[5], transfer_penalty=16, waiting_penalty=2,
-                                      paradero_cercano_dic=paradero_cercano_dic,
-                                      dict_servicio_llave_codigoTS=dict_servicio_llave_codigoTS)
-            cadena_alternativa_desglosada = ''.join([cadena_alternativa, '/', hyperpath_obj.get_all_shortest_paths_desglosado(x[4])[0]])
+            # encuentra la ruta minima en metro
+            shortest_path = Shortest(x[4], x[5], dict_servicio_llave_codigoTS).get_all_shortest_paths_desglosado()[0]
+            cadena_alternativa_desglosada = ''.join([cadena_alternativa, '/', shortest_path])
             cadena_alternativa = ''.join([cadena_alternativa, '/', x[4], '/', x[5]])
         else:
             if x[2] == x[4]:
@@ -243,10 +244,9 @@ def alternativas(x):
                 x[7] = dict_metro[x[7]]
                 x[8] = dict_metro[x[8]]
 
-                hyperpath_obj = Hyperpath(g, destination=x[8], transfer_penalty=16, waiting_penalty=2, paradero_cercano_dic=paradero_cercano_dic,
-                                          dict_servicio_llave_codigoTS=dict_servicio_llave_codigoTS)
+                shortest_path = Shortest(x[7], x[8], dict_servicio_llave_codigoTS).get_all_shortest_paths_desglosado()[0]
 
-                cadena_alternativa_desglosada = ''.join([cadena_alternativa, '/', hyperpath_obj.get_all_shortest_paths_desglosado(x[7])[0]])
+                cadena_alternativa_desglosada = ''.join([cadena_alternativa, '/', shortest_path])
                 cadena_alternativa = ''.join([cadena_alternativa, '/', x[7], '/', x[8]])
 
             else:

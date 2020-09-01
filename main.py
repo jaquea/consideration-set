@@ -37,6 +37,10 @@ dump_file1 = open('tmp\\grafo.igraph', 'rb')
 g = pickle.load(dump_file1)
 dump_file1.close()
 
+dump_file1 = open('tmp\\grafo_metro.igraph', 'rb')
+g_metro = pickle.load(dump_file1)
+dump_file1.close()
+
 dump_file1 = open('tmp\\dict_servicio_llave_codigoTS.pkl', 'rb')
 dict_servicio_llave_codigoTS = pickle.load(dump_file1)
 dump_file1.close()
@@ -67,4 +71,4 @@ hiperruta_minimo_camino_desglosado, cant_max_alternativas_hiperruta, hiperruta_m
 
 Consideration_set_obj = Consideration_set(cant_max_alternativas_hiperruta)
 Consideration_set_obj.get_consideration_set(g, hiperruta_minimo_camino_desglosado, viajes, dict_tiempos, dict_frecuencia,
-                                            paraderos_coord_dic, hiperruta_minimo,dict_servicio_llave_usuario)
+                                            paraderos_coord_dic, hiperruta_minimo,dict_servicio_llave_usuario, g_metro)

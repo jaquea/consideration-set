@@ -7,7 +7,7 @@ class Consideration_set:
     def __init__(self, cant_max_alternativas):
         self.cant_max_alternativas = cant_max_alternativas
 
-    def get_consideration_set(self, g, hiperruta_minimo_desglosada, viajes, dict_tiempos, dict_frecuencia, paraderos_coord_dic,  hiperruta_minimo, dict_servicio_llave_usuario):
+    def get_consideration_set(self, g, hiperruta_minimo_desglosada, viajes, dict_tiempos, dict_frecuencia, paraderos_coord_dic,  hiperruta_minimo, dict_servicio_llave_usuario, g_metro):
 
         posicion = 0
         resultado = pd.DataFrame()
@@ -23,7 +23,7 @@ class Consideration_set:
                         c = hiperruta_minimo_desglosada[o][d][posicion]
                         c_no_desglosado = hiperruta_minimo[o][d][posicion]
 
-                        atributos_obj = Atributes(c, g)
+                        atributos_obj = Atributes(c, g, g_metro)
                         lista_atributos = atributos_obj.get_atributes(dict_tiempos, dict_frecuencia,
                                                                       paraderos_coord_dic, dict_servicio_llave_usuario)
 

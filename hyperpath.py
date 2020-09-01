@@ -278,22 +278,6 @@ class Hyperpath:
 
         return Dict_caminos, hiperruta_minimo, hiperruta_proporcion, hiperruta_minimo_camino_desglosado
 
-    def get_all_shortest_paths_desglosado(self, origin):
-
-        if origin not in self._hyperpath.vs["name2"]:
-            return 'no_esta_en_hiper-ruta'
-
-        origin_index = self._hyperpath.vs.find(name2=origin).index
-
-        path_set = self._hyperpath.get_all_shortest_paths(origin_index, to=self.destination_index,
-                                                              weights=self._hyperpath.es["peso"], mode=OUT)
-
-        path = []
-        for j in path_set:
-            camino = self.format_paths(j)[0]
-            path.append(camino)
-        return path
-
     def get_all_shortest_paths(self, origin, hiperruta_proporcion):
 
         tpo_mas_corto = float('inf')
