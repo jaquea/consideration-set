@@ -18,6 +18,14 @@ dump_file2 = open('tmp\\viajes_reales.pkl', 'rb')
 viajes_reales = dill.load(dump_file2)
 dump_file2.close()
 
+dump_file1 = open('tmp\\viajes_alternativas_desaglosadas.pkl', 'rb')
+viajes_alternativas_desaglosadas = dill.load(dump_file1)
+dump_file1.close()
+
+dump_file1 = open('tmp\\viajes_alternativas.pkl', 'rb')
+viajes_alternativas = dill.load(dump_file1)
+dump_file1.close()
+
 #viajes_p = defaultdict(lambda:defaultdict(lambda:defaultdict(lambda:0)))
 
 #viajes_p['T-34-313-SN-35']['M-SL']= viajes['T-34-313-SN-35']['M-SL']
@@ -47,11 +55,11 @@ with open('outputs\\resumen_pares_OD.csv', 'wb') as csvFile:
 lista_de_viajes.sort(key=lambda x: x['n'], reverse=True)
 
 answer = set()
-sampleSize = 150
+sampleSize = 200
 answerSize = 0
 lista = []
 
-seed(150)
+seed(200)
 
 while answerSize < sampleSize:
     r = randint(0,803)
@@ -117,6 +125,8 @@ for llave1 in paraderos_coord_dic:
 print paradero_cercano_dic['T-13-54-SN-60']
 
 viajes_procesados = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
+viajes_alternativas_desaglosadas_procesados  = defaultdict(lambda: defaultdict(list))
+viajes_alternativas_procesados  = defaultdict(lambda: defaultdict(list))
 
 cont = 0
 for elemento in lista_de_viajes:
@@ -133,7 +143,24 @@ for elemento in lista_de_viajes:
             for camino in viajes_reales[par[0]][par[1]]:
                 viajes_procesados[destino][origen][camino] = viajes_reales[par[0]][par[1]][camino]
 
-print paradero_cercano_dic['T-13-54-SN-60']
+            for camino in viajes_alternativas_desaglosadas[origen][destino]:
+                if camino not in viajes_alternativas_desaglosadas_procesados[origen][destino]:
+                    viajes_alternativas_desaglosadas_procesados[origen][destino].append(camino)
+
+            for camino in viajes_alternativas[origen][destino]:
+                if camino not in viajes_alternativas_procesados[origen][destino]:
+                    viajes_alternativas_procesados[origen][destino].append(camino)
+
+print('viajes_alternativas_desaglosadas_procesados', viajes_alternativas_desaglosadas_procesados)
+print('viajes_alternativas_procesados', viajes_alternativas_procesados)
+
+dump_file2 = open('tmp\\viajes_alternativas_desaglosadas_procesados.pkl', 'wb')
+dill.dump(viajes_alternativas_desaglosadas_procesados, dump_file2)
+dump_file2.close()
+
+dump_file2 = open('tmp\\viajes_alternativas_procesados.pkl', 'wb')
+dill.dump(viajes_alternativas_procesados, dump_file2)
+dump_file2.close()
 
 dump_file2 = open('tmp\\viajes_procesados.pkl', 'wb')
 dill.dump(viajes_procesados, dump_file2)

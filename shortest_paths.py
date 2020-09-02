@@ -1,6 +1,5 @@
-from igraph import *
-
 from HeapBinaria import HeapBinaria
+from igraph import *
 
 class Shortest():
     def __init__(self, grafo,  origin, destination, dict_servicio_llave_codigoTS):
@@ -160,7 +159,7 @@ class Shortest():
 
     def get_all_shortest_paths_desglosado(self):
 
-        path_set = self.g.get_all_shortest_paths(self.origin_index, to=self.destination_index, weights=self.g.es["peso"], mode=OUT)
+        path_set = self.g.get_all_shortest_paths(self.origin_index, to=self.destination_index, weights=self.g.es["peso"],mode=OUT)
         path = []
         for j in path_set:
             camino = self.format_paths(j)[0]

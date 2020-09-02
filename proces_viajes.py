@@ -26,6 +26,10 @@ dump_file1 = open('tmp\\grafo.igraph', 'rb')
 g = pickle.load(dump_file1)
 dump_file1.close()
 
+dump_file1 = open('tmp\\grafo_metro.igraph', 'rb')
+g_metro = pickle.load(dump_file1)
+dump_file1.close()
+
 with open('inputs\\info_servicios.json') as data_file:
     data = json.loads(data_file.read())
 
@@ -152,7 +156,6 @@ def alternativas(x):
         else:
             servicio_modificado = ''
 
-        print(servicio_modificado)
         if servicio_modificado in dict_servicio_llave_codigoTS:
             x[3] = dict_servicio_llave_codigoTS[servicio_modificado][0]
 
@@ -204,15 +207,13 @@ def alternativas(x):
         x[2] = dict_metro[x[2]]
         cadena_alternativa = ''.join([x[1],'/',x[2]])
          #encuentra la ruta minima en metro
-        shortest_path = Shortest(x[1], x[2], dict_servicio_llave_codigoTS).get_all_shortest_paths_desglosado()[0]
+        shortest_path = Shortest(g_metro, x[1], x[2], dict_servicio_llave_codigoTS).get_all_shortest_paths_desglosado()[0]
         cadena_alternativa_desglosada = shortest_path
     else:
         cadena_alternativa = ''.join([x[1],'/',x[3],'/',x[2]])
         cadena_alternativa_desglosada = ''.join([x[1],'/',x[3],'/',x[2]])
 
     if x[0] == 1:
-        print('cadena_alternativa', cadena_alternativa)
-        print('cadena_alternativa_desglosada', cadena_alternativa_desglosada)
         return cadena_alternativa, cadena_alternativa_desglosada
 
     else:
@@ -223,7 +224,7 @@ def alternativas(x):
             x[5] = dict_metro[x[5]]
 
             # encuentra la ruta minima en metro
-            shortest_path = Shortest(x[4], x[5], dict_servicio_llave_codigoTS).get_all_shortest_paths_desglosado()[0]
+            shortest_path = Shortest(g_metro, x[4], x[5], dict_servicio_llave_codigoTS).get_all_shortest_paths_desglosado()[0]
             cadena_alternativa_desglosada = ''.join([cadena_alternativa, '/', shortest_path])
             cadena_alternativa = ''.join([cadena_alternativa, '/', x[4], '/', x[5]])
         else:
@@ -244,7 +245,7 @@ def alternativas(x):
                 x[7] = dict_metro[x[7]]
                 x[8] = dict_metro[x[8]]
 
-                shortest_path = Shortest(x[7], x[8], dict_servicio_llave_codigoTS).get_all_shortest_paths_desglosado()[0]
+                shortest_path = Shortest(g_metro, x[7], x[8], dict_servicio_llave_codigoTS).get_all_shortest_paths_desglosado()[0]
 
                 cadena_alternativa_desglosada = ''.join([cadena_alternativa, '/', shortest_path])
                 cadena_alternativa = ''.join([cadena_alternativa, '/', x[7], '/', x[8]])
@@ -259,11 +260,23 @@ def alternativas(x):
                     cadena_alternativa_desglosada = cadena_alternativa
             return cadena_alternativa, cadena_alternativa_desglosada
 
+def alternativas_func1(*args, **kwargs):
+    return alternativas(*args, **kwargs)[0]
+
+def alternativas_func2(*args, **kwargs):
+    return alternativas(*args, **kwargs)[1]
+
 df['alternativa_viaje']=df[['netapa',
                             'paraderosubida_1era','paraderobajada_1era','serv_1era_etapa',
                             'paraderosubida_2da','paraderobajada_2da','serv_2da_etapa',
                             'paraderosubida_3era','paraderobajada_3era','serv_3era_etapa',
-                            'tipotransporte_1era', 'tipotransporte_2da', 'tipotransporte_3era']].apply(alternativas, axis=1)
+                            'tipotransporte_1era', 'tipotransporte_2da', 'tipotransporte_3era']].apply(alternativas_func1, axis=1)
+
+df['alternativa_viaje_desglosada']=df[['netapa',
+                            'paraderosubida_1era','paraderobajada_1era','serv_1era_etapa',
+                            'paraderosubida_2da','paraderobajada_2da','serv_2da_etapa',
+                            'paraderosubida_3era','paraderobajada_3era','serv_3era_etapa',
+                            'tipotransporte_1era', 'tipotransporte_2da', 'tipotransporte_3era']].apply(alternativas_func2, axis=1)
 
 df_sin_ZP = df[(df['tipotransporte_1era']!='ZP') & (df['tipotransporte_2da']!='ZP') &  (df['tipotransporte_3era']!='ZP') & (df['id']!='-')]
 
@@ -274,14 +287,21 @@ df_sin_ZP_sin_metro = df_sin_ZP[(df_sin_ZP['id']!='-') & ((df_sin_ZP['netapa']>1
 #print('viajes que no se realizan en zona paga ni solo en metro', df_sin_ZP_sin_metro.count()[0])
 
 viajes = defaultdict(lambda:defaultdict(lambda:defaultdict(lambda:0)))
+#diccionario para armar conjunto de consideracion con alternativas observadas
+viajes_alternativas_desagregadas = defaultdict(lambda: defaultdict(list))
+viajes_alternativas = defaultdict(lambda: defaultdict(list))
 viajes_reales = defaultdict(lambda:defaultdict(lambda:defaultdict(lambda:0)))
 
 for idx, row in df_sin_ZP_sin_metro.iterrows():
     OD_paradero = row['idx_OD_paradero'].split("/")
     alternativa = row['alternativa_viaje']
+    alternativa_desglosada = row['alternativa_viaje_desglosada']
     origen = OD_paradero[0]
     destino = OD_paradero[1]
     viajes[origen][destino][alternativa] += 1
+    if alternativa not in viajes_alternativas[origen][destino]:
+        viajes_alternativas_desagregadas[origen][destino].append(alternativa_desglosada)
+        viajes_alternativas[origen][destino].append(alternativa)
 
 for idx, row in df.iterrows():
     OD_paradero = row['idx_OD_paradero'].split("/")
@@ -290,6 +310,13 @@ for idx, row in df.iterrows():
     destino = OD_paradero[1]
     viajes_reales[origen][destino][alternativa] += 1
 
+dump_file1 = open('tmp\\viajes_alternativas_desglosadas.pkl', 'wb')
+pickle.dump(viajes_alternativas_desagregadas, dump_file1)
+dump_file1.close()
+
+dump_file1 = open('tmp\\viajes_alternativas.pkl', 'wb')
+pickle.dump(viajes_alternativas, dump_file1)
+dump_file1.close()
 
 dump_file1 = open('tmp\\dict_servicio_llave_codigoTS.pkl', 'wb')
 pickle.dump(dict_servicio_llave_codigoTS, dump_file1)

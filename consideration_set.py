@@ -7,7 +7,7 @@ class Consideration_set:
     def __init__(self, cant_max_alternativas):
         self.cant_max_alternativas = cant_max_alternativas
 
-    def get_consideration_set(self, g, hiperruta_minimo_desglosada, viajes, dict_tiempos, dict_frecuencia, paraderos_coord_dic,  hiperruta_minimo, dict_servicio_llave_usuario, g_metro):
+    def get_consideration_set(self, g, hiperruta_minimo_desglosada, viajes, dict_tiempos, dict_frecuencia, paraderos_coord_dic,  hiperruta_minimo, dict_servicio_llave_usuario, g_metro, numero):
 
         posicion = 0
         resultado = pd.DataFrame()
@@ -83,4 +83,11 @@ class Consideration_set:
                     new_df.at[i + contador, ''.join(['CHOICE', unicode(cont)])] = 1
                 contador += l
 
-        new_df.to_csv("outputs\\alternativas_elementales_hiperruta_c.csv", encoding='utf-8', index=False, sep=',')
+        if numero == '1':
+            new_df.to_csv("outputs\\alternativas_elementales_hiperruta.csv", encoding='utf-8', index=False, sep=',')
+
+        if numero == '2':
+            new_df.to_csv("outputs\\alternativas_elementales_observadas.csv", encoding='utf-8', index=False, sep=',')
+
+
+
