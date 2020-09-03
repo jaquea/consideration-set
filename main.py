@@ -69,6 +69,7 @@ with open('outputs\\resumen_geografico_OD.csv', 'wb') as csvFile:
 
 #viajes_p = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
 #viajes_p['M-TB']['T-13-104-PO-15'] = viajes['M-TB']['T-13-104-PO-15']
+
 #viajes_p['M-TB']['T-13-54-SN-60'] = viajes['M-TB']['T-13-54-SN-60']
 #viajes_p['L-33-52-155-PO']['L-33-52-5-OP'] = viajes['L-33-52-155-PO']['L-33-52-5-OP']
 #viajes_p['T-18-156-PO-37']['M-CS'] = viajes['T-18-156-PO-37']['M-CS']
