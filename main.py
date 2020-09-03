@@ -49,6 +49,7 @@ dump_file1 = open('tmp\\dict_servicio_llave_usuario.pkl', 'rb')
 dict_servicio_llave_usuario = pickle.load(dump_file1)
 dump_file1.close()
 
+'''
 dump_file1 = open('tmp\\viajes_alternativas_desaglosadas_procesados.pkl', 'rb')
 viajes_alternativas_desaglosadas_procesados = pickle.load(dump_file1)
 dump_file1.close()
@@ -56,6 +57,7 @@ dump_file1.close()
 dump_file1 = open('tmp\\viajes_alternativas_procesados.pkl', 'rb')
 viajes_alternativas_procesados = pickle.load(dump_file1)
 dump_file1.close()
+'''
 
 with open('outputs\\resumen_geografico_OD.csv', 'wb') as csvFile:
     writer = csv.writer(csvFile)
@@ -65,12 +67,13 @@ with open('outputs\\resumen_geografico_OD.csv', 'wb') as csvFile:
         for destino in viajes[origen]:
             writer.writerow([origen, destino, paraderos_coord_dic[origen][0], paraderos_coord_dic[origen][1], paraderos_coord_dic[destino][0], paraderos_coord_dic[destino][1]])
 
-viajes_p = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
+#viajes_p = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
 #viajes_p['M-TB']['T-13-104-PO-15'] = viajes['M-TB']['T-13-104-PO-15']
 #viajes_p['M-TB']['T-13-54-SN-60'] = viajes['M-TB']['T-13-54-SN-60']
-viajes_p['L-33-52-155-PO']['L-33-52-5-OP'] = viajes['L-33-52-155-PO']['L-33-52-5-OP']
-viajes = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
-viajes = viajes_p
+#viajes_p['L-33-52-155-PO']['L-33-52-5-OP'] = viajes['L-33-52-155-PO']['L-33-52-5-OP']
+#viajes_p['T-18-156-PO-37']['M-CS'] = viajes['T-18-156-PO-37']['M-CS']
+#viajes = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
+#viajes = viajes_p
 
 #conjunto de consideracion para hiper-rutas
 files_obj = Files(viajes, g, paradero_cercano_dic, dict_servicio_llave_codigoTS)
@@ -81,6 +84,8 @@ Consideration_set_obj = Consideration_set(cant_max_alternativas_hiperruta)
 Consideration_set_obj.get_consideration_set(g, hiperruta_minimo_camino_desglosado, viajes, dict_tiempos, dict_frecuencia,
                                             paraderos_coord_dic, hiperruta_minimo,dict_servicio_llave_usuario, g_metro, '1')
 
+
+'''
 #conjunto de consideracion para alternativas observada
 
 cant_max_alternativas_observadas = 0
@@ -96,3 +101,5 @@ Consideration_set_obj = Consideration_set(cant_max_alternativas_observadas)
 
 Consideration_set_obj.get_consideration_set(g, viajes_alternativas_desaglosadas_procesados, viajes, dict_tiempos, dict_frecuencia,
                                             paraderos_coord_dic, viajes_alternativas_procesados,dict_servicio_llave_usuario, g_metro, '2')
+
+'''

@@ -62,8 +62,8 @@ class Atributes:
 
             # si es arco en metro
             if n[:2] == 'M-' and nodo_anterior_anterior[:2] == 'M-':
-                n_destino = self.g.vs.find(name2=n).index
-                n_origen = self.g.vs.find(name2=nodo_anterior_anterior).index
+                n_destino = self.g_metro.vs.find(name2=n).index
+                n_origen = self.g_metro.vs.find(name2=nodo_anterior_anterior).index
 
                 # calcular tiempo de espera y tiempo de viaje en metro
                 str1 = nodo_anterior + 'V-I'
