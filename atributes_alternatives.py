@@ -99,23 +99,29 @@ class Atributes:
             else:
                 tpo_bus_tmp = 0
                 frecuencia_tmp = 0
+                contador_servicios = 0
                 for serviciosTS in dict_servicio_llave_usuario[nodo_anterior]:
-                    tpo_bus_tmp += (dict_tiempos[serviciosTS][n] - dict_tiempos[serviciosTS][nodo_anterior_anterior])
-                    frecuencia_tmp += dict_frecuencia[serviciosTS][nodo_anterior_anterior]
+                    diferencia_tiempo = (dict_tiempos[serviciosTS][n] - dict_tiempos[serviciosTS][nodo_anterior_anterior])
+                    if diferencia_tiempo>0 and dict_tiempos[serviciosTS][n] > -1 and dict_tiempos[serviciosTS][nodo_anterior_anterior] > -1:
+                        contador_servicios += 1
+                        tpo_bus_tmp += (dict_tiempos[serviciosTS][n] - dict_tiempos[serviciosTS][nodo_anterior_anterior])
+                        frecuencia_tmp += dict_frecuencia[serviciosTS][nodo_anterior_anterior]
 
-                if len(dict_servicio_llave_usuario[nodo_anterior]) > 0:
-                    self.tpo_bus += tpo_bus_tmp/len(dict_servicio_llave_usuario[nodo_anterior])
+                    else:
+                        print(dict_tiempos[serviciosTS][n],dict_tiempos[serviciosTS][nodo_anterior_anterior])
+
+                if contador_servicios > 0:
+                    self.tpo_bus += tpo_bus_tmp/contador_servicios
 
                 else:
                     print('no se encontro el servicio en el diccionario dict_servicio_llave_usuario')
-                    print('len(dict_servicio_llave_usuario[nodo_anterior])=0', serviciosTS, nodo_anterior)
+                    print('len(dict_servicio_llave_usuario[nodo_anterior])=0', dict_servicio_llave_usuario[nodo_anterior], nodo_anterior)
 
                 if frecuencia_tmp > 0:
                     tpo_espera = 1 / frecuencia_tmp
 
                 else:
                     tpo_espera = 0
-                    print('frecuencia 0', serviciosTS)
 
                 if self.tpo_espera_inicial == 0:
                     self.tpo_espera_inicial += tpo_espera
