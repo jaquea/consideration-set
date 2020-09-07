@@ -75,6 +75,8 @@ dates = dates.map(lambda x: x.strftime('%Y-%m-%d'))
 dates.name = 'fecha'
 df = pd.concat([df, dates], axis=1)
 
+
+
 viajes_totales = len(df.id)
 print('viajes totales=', viajes_totales)
 
@@ -225,18 +227,17 @@ def alternativas(x):
 
             # encuentra la ruta minima en metro
             shortest_path = Shortest(g_metro, x[4], x[5], dict_servicio_llave_codigoTS).get_all_shortest_paths_desglosado()[0]
-            cadena_alternativa_desglosada = ''.join([cadena_alternativa, '/', shortest_path])
+            cadena_alternativa_desglosada = ''.join([cadena_alternativa_desglosada, '/', shortest_path])
             cadena_alternativa = ''.join([cadena_alternativa, '/', x[4], '/', x[5]])
         else:
             if x[2] == x[4]:
                 cadena_alternativa = ''.join([cadena_alternativa, '/', x[6], '/', x[5]])
-                cadena_alternativa_desglosada = cadena_alternativa
+                cadena_alternativa_desglosada = ''.join([cadena_alternativa_desglosada, '/', x[6], '/', x[5]])
 
             else:
                 cadena_alternativa = ''.join([cadena_alternativa, '/', x[4], '/', x[6], '/', x[5]])
-                cadena_alternativa_desglosada = cadena_alternativa
+                cadena_alternativa_desglosada = ''.join([cadena_alternativa_desglosada, '/', x[4], '/', x[6], '/', x[5]])
         if x[0] == 2:
-
             return cadena_alternativa, cadena_alternativa_desglosada
 
         else:
@@ -247,17 +248,17 @@ def alternativas(x):
 
                 shortest_path = Shortest(g_metro, x[7], x[8], dict_servicio_llave_codigoTS).get_all_shortest_paths_desglosado()[0]
 
-                cadena_alternativa_desglosada = ''.join([cadena_alternativa, '/', shortest_path])
+                cadena_alternativa_desglosada = ''.join([cadena_alternativa_desglosada, '/', shortest_path])
                 cadena_alternativa = ''.join([cadena_alternativa, '/', x[7], '/', x[8]])
 
             else:
                 if x[5] == x[7]:
                     cadena_alternativa = ''.join([cadena_alternativa, '/', x[9], '/', x[8]])
-                    cadena_alternativa_desglosada = cadena_alternativa
+                    cadena_alternativa_desglosada = ''.join([cadena_alternativa_desglosada, '/', x[9], '/', x[8]])
 
                 else:
                     cadena_alternativa = ''.join([cadena_alternativa, '/', x[7], '/', x[9], '/', x[8]])
-                    cadena_alternativa_desglosada = cadena_alternativa
+                    cadena_alternativa_desglosada = ''.join([cadena_alternativa_desglosada, '/', x[7], '/', x[9], '/', x[8]])
             return cadena_alternativa, cadena_alternativa_desglosada
 
 def alternativas_func1(*args, **kwargs):
@@ -277,6 +278,7 @@ df['alternativa_viaje_desglosada']=df[['netapa',
                             'paraderosubida_2da','paraderobajada_2da','serv_2da_etapa',
                             'paraderosubida_3era','paraderobajada_3era','serv_3era_etapa',
                             'tipotransporte_1era', 'tipotransporte_2da', 'tipotransporte_3era']].apply(alternativas_func2, axis=1)
+
 
 df_sin_ZP = df[(df['tipotransporte_1era']!='ZP') & (df['tipotransporte_2da']!='ZP') &  (df['tipotransporte_3era']!='ZP') & (df['id']!='-')]
 
