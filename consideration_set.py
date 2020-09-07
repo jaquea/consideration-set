@@ -15,9 +15,12 @@ class Consideration_set:
         while posicion <= (self.cant_max_alternativas - 1):
 
             lista = []
+            contador = 0
 
             for o in hiperruta_minimo:
                 for d in hiperruta_minimo[o]:
+                    contador += 1
+                    print('origen', o, 'destino', d, 'contador', contador, 'posicion', posicion)
                     # si hay mas caminos que el marcador posicion se agrega c, el camino
                     if len(hiperruta_minimo[o][d]) > posicion:
                         c = hiperruta_minimo_desglosada[o][d][posicion]
