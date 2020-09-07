@@ -52,9 +52,6 @@ class Atributes:
                 self.n_trasbordo_metro += float(suma_n_trasbordo_metro)/contador
                 #self.hacinamiento_anden += float(suma_hacinamiento_anden)/contador
 
-            else:
-                print(servicios)
-                print('nodo_anterior_anterior', nodo_anterior_anterior)
 
     def tpo_viaje_espera(self, n, nodo_anterior, tipo_nodo_actual, tipo_nodo_anterior, tipo_nodo_anterior_anterior, nodo_anterior_anterior, dict_tiempos, dict_frecuencia,dict_servicio_llave_usuario):
 
@@ -107,12 +104,10 @@ class Atributes:
                         tpo_bus_tmp += (dict_tiempos[serviciosTS][n] - dict_tiempos[serviciosTS][nodo_anterior_anterior])
                         frecuencia_tmp += dict_frecuencia[serviciosTS][nodo_anterior_anterior]
 
+
                 if contador_servicios > 0:
                     self.tpo_bus += tpo_bus_tmp/contador_servicios
 
-                else:
-                    print('no se encontro el servicio en el diccionario dict_servicio_llave_usuario')
-                    print('len(dict_servicio_llave_usuario[nodo_anterior])=0', dict_servicio_llave_usuario[nodo_anterior], nodo_anterior)
 
                 if frecuencia_tmp > 0:
                     tpo_espera = 1 / frecuencia_tmp
