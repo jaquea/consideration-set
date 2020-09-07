@@ -107,9 +107,6 @@ class Atributes:
                         tpo_bus_tmp += (dict_tiempos[serviciosTS][n] - dict_tiempos[serviciosTS][nodo_anterior_anterior])
                         frecuencia_tmp += dict_frecuencia[serviciosTS][nodo_anterior_anterior]
 
-                    else:
-                        print(dict_tiempos[serviciosTS][n],dict_tiempos[serviciosTS][nodo_anterior_anterior])
-
                 if contador_servicios > 0:
                     self.tpo_bus += tpo_bus_tmp/contador_servicios
 
