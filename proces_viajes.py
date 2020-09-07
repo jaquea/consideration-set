@@ -303,12 +303,24 @@ for idx, row in df_sin_ZP_sin_metro.iterrows():
         viajes_alternativas_desagregadas[origen][destino].append(alternativa_desglosada)
         viajes_alternativas[origen][destino].append(alternativa)
 
-for idx, row in df.iterrows():
+for idx, row in df_sin_ZP_sin_metro.iterrows():
     OD_paradero = row['idx_OD_paradero'].split("/")
     alternativa = row['alternativa_viaje']
     origen = OD_paradero[0]
     destino = OD_paradero[1]
+    viajes[origen][destino][alternativa] += 1
+
+
+for idx, row in df.iterrows():
+    OD_paradero = row['idx_OD_paradero'].split("/")
+    alternativa = row['alternativa_viaje']
+    alternativa_desglosada = row['alternativa_viaje_desglosada']
+    origen = OD_paradero[0]
+    destino = OD_paradero[1]
     viajes_reales[origen][destino][alternativa] += 1
+    if alternativa not in viajes_alternativas[origen][destino]:
+        viajes_alternativas_desagregadas[origen][destino].append(alternativa_desglosada)
+        viajes_alternativas[origen][destino].append(alternativa)
 
 dump_file1 = open('tmp\\viajes_alternativas_desglosadas.pkl', 'wb')
 pickle.dump(viajes_alternativas_desagregadas, dump_file1)
