@@ -141,14 +141,15 @@ class Hyperpath:
 
             # si el nodo es un servicio (posee paradero/servicio)
             else:
+                #print('nodo_anterior',nodo_anterior,'nombre_nodo',nombre_nodo)
                 n_paradero = 0
                 tipo_nodo_actual = 'servicio'
                 frecuencia_arco = self.g.es[
                     self.g.get_eid(self.g.vs.find(name2=nodo_anterior).index, self.g.vs.find(name2=nombre_nodo).index,
                                    directed=True, error=True)]['frecuencia']
-
+                #print('frecuencia', frecuencia_arco, 'metro_inicial', metro_inicial)
                 # si es arco de subida a bus
-                if frecuencia_arco < float('inf') and tipo_nodo_anterior != 'servicio' and nodo_anterior[:2] != 'M-':
+                if frecuencia_arco < float('inf') and tipo_nodo_anterior != 'servicio' and nodo_anterior[:2]!='M-':
                     prob_arco = frecuencia_arco / frecuencia_total
                     prob_camino = prob_camino * prob_arco
                     servicio = nombre_nodo.split("/")[1]
