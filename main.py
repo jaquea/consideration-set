@@ -29,10 +29,6 @@ dump_file2 = open('tmp\\paradero_cercano_dic.pkl', 'rb')
 paradero_cercano_dic = dill.load(dump_file2)
 dump_file2.close()
 
-dump_file2 = open('tmp\\dict_hacinamiento_metro.pkl', 'rb')
-dict_hacinamiento_metro = dill.load(dump_file2)
-dump_file2.close()
-
 dump_file1 = open('tmp\\grafo.igraph', 'rb')
 g = pickle.load(dump_file1)
 dump_file1.close()
