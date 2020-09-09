@@ -18,7 +18,7 @@ dump_file2 = open('tmp\\viajes_reales.pkl', 'rb')
 viajes_reales = dill.load(dump_file2)
 dump_file2.close()
 
-dump_file1 = open('tmp\\viajes_alternativas_desaglosadas.pkl', 'rb')
+dump_file1 = open('tmp\\viajes_alternativas_desglosadas.pkl', 'rb')
 viajes_alternativas_desaglosadas = dill.load(dump_file1)
 dump_file1.close()
 
