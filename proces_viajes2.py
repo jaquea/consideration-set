@@ -65,7 +65,7 @@ for elemento in lista_de_viajes:
     if n>=100:
         cont += 1
 
-print(n)
+print(cont)
 answer = set()
 sampleSize = 200
 answerSize = 0
@@ -74,7 +74,7 @@ lista = []
 seed(200)
 
 while answerSize < sampleSize:
-    r = randint(0,n)
+    r = randint(0,cont)
     if r not in answer:
         answerSize += 1
         answer.add(r)
