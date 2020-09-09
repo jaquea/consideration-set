@@ -20,8 +20,7 @@ class PathSizeTestCase(TestCase):
             viajes_alternativas_desaglosadas_procesados = dill.load(dill_file)
         viajes_alternativas_procesados_p = defaultdict(lambda: defaultdict(list))
         #viajes_alternativas_procesados_p['T-13-104-PO-15']['M-TB'] = viajes_alternativas_desaglosadas_procesados['T-13-104-PO-15']['M-TB']
-        viajes_alternativas_procesados_p['T-13-54-SN-60']['M-TB'] = viajes_alternativas_desaglosadas_procesados['T-13-54-SN-60']['M-TB']
-
+        viajes_alternativas_procesados_p['T-34-270-SN-30']['T-31-134-SN-20'] = viajes_alternativas_desaglosadas_procesados['T-34-270-SN-30']['T-31-134-SN-20']
         with open(os.path.join('tmp', 'grafo.igraph'), 'rb') as dill_file:
             g = dill.load(dill_file)
 
