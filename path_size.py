@@ -189,7 +189,7 @@ def correlacion(df, PS, dict_tiempos):
     alerta = 0
     sin_asignacion = 0
 
-    Path_Size_dist = defaultdict(lambda: defaultdict(float))
+    Path_Size_dist = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
 
     for llave in PS:
         alerta += 1
@@ -203,13 +203,7 @@ def correlacion(df, PS, dict_tiempos):
             distancia_estrategia = 0
             PS_estrategia = 0
 
-            print('estrategia', est)
-            print('ver aqui', PS[llave][est])
-
             for et in PS[llave][est]:
-
-                print ('etapa:', et)
-                print(PS[llave][est][et])
                 PS_etapa = 0
                 distancia_etapa = 0
 
@@ -261,7 +255,6 @@ def correlacion(df, PS, dict_tiempos):
 
                     # después de recorrer todas las estrategias para verificar si el arco está incluido se suma
                     # la correlación del arco
-                    print('N_estrategia', N_estrategia)
                     PS_a = distancia_sobrepuesta_estrategia * math.log(1.0 / N_estrategia)
 
                     if PS_etapa >= PS_a:
@@ -269,7 +262,7 @@ def correlacion(df, PS, dict_tiempos):
                         PS_etapa = PS_a
 
                 if distancia_etapa == 0:
-                    Path_Size_dist[llave][est] = 10000
+                    Path_Size_dist[paradero_subida][paradero_bajada][est] = 10000
                     break
 
                 # se suma la distancia de la etapa a la distancia total de la estrategia
@@ -283,11 +276,12 @@ def correlacion(df, PS, dict_tiempos):
             if distancia_estrategia > 0:
                 PS_estrategia = (1 / distancia_estrategia) * PS_estrategia
 
+
                 # print('correlacion_estrategia', PS_estrategia)
-                Path_Size_dist[llave][est] = PS_estrategia
+                Path_Size_dist[paradero_subida][paradero_bajada][est] = PS_estrategia
 
             else:
-                Path_Size_dist[llave][est] = 10000
+                Path_Size_dist[paradero_subida][paradero_bajada][est] = 10000
 
     return Path_Size_dist
 
@@ -333,7 +327,7 @@ def main():
 
     PS = process_frame_alt(viajes_alternativas_procesados, g)
     # T-13-104-PO-15/109-R/E-13-278-PO-15/M-PM/L5/M-BA/L1/M-TB
-    print('PS', PS['T-13-104-PO-15/M-TB']['T-13-104-PO-15/109-R/E-13-278-PO-15/M-PM/L5/M-BA/L1/M-TB'][2])
+    print('PS', PS['T-34-270-SN-30/T-31-134-SN-20']['T-13-104-PO-15/109-R/E-13-278-PO-15/M-PM/L5/M-BA/L1/M-TB'][2])
     print(viajes_alternativas_procesados)
     print(correlacion(df, PS, paradero_cercano_dic, dict_tiempos))
 
