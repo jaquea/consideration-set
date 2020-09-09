@@ -133,10 +133,6 @@ for llave1 in paraderos_coord_dic:
         if dist <= radio and llave2 not in paradero_cercano_dic[llave1]:
             paradero_cercano_dic[llave1].append(llave2)
 
-print ('viajes_reales',viajes_reales['M-PI']['M-SJ'])
-
-exit(0)
-
 viajes_procesados = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
 viajes_alternativas_desaglosadas_procesados  = defaultdict(lambda: defaultdict(list))
 viajes_alternativas_procesados  = defaultdict(lambda: defaultdict(list))
@@ -146,7 +142,6 @@ for elemento in lista_de_viajes:
     cont +=1
     origen = elemento['origen']
     destino = elemento['destino']
-    print(cont)
     grupo_subida = paradero_cercano_dic[origen]
     grupo_bajada = paradero_cercano_dic[destino]
     tuplas = [(x, y) for x in grupo_subida for y in grupo_bajada]
@@ -156,16 +151,16 @@ for elemento in lista_de_viajes:
             for camino in viajes_reales[par[0]][par[1]]:
                 viajes_procesados[destino][origen][camino] = viajes_reales[par[0]][par[1]][camino]
 
-            for camino in viajes_alternativas_desaglosadas[origen][destino]:
+            for camino in viajes_alternativas_desaglosadas[par[0]][par[1]]:
                 if camino not in viajes_alternativas_desaglosadas_procesados[origen][destino]:
                     viajes_alternativas_desaglosadas_procesados[origen][destino].append(camino)
 
-            for camino in viajes_alternativas[origen][destino]:
+            for camino in viajes_alternativas[par[0]][par[1]]:
                 if camino not in viajes_alternativas_procesados[origen][destino]:
                     viajes_alternativas_procesados[origen][destino].append(camino)
 
-print('viajes_alternativas_desaglosadas_procesados', viajes_alternativas_desaglosadas_procesados)
-print('viajes_alternativas_procesados', viajes_alternativas_procesados)
+print('viajes_alternativas_desaglosadas_procesados', len(viajes_alternativas_desaglosadas_procesados))
+print('viajes_alternativas_procesados', len(viajes_alternativas_procesados))
 
 dump_file2 = open('tmp\\viajes_alternativas_desaglosadas_procesados.pkl', 'wb')
 dill.dump(viajes_alternativas_desaglosadas_procesados, dump_file2)
