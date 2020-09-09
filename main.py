@@ -114,7 +114,7 @@ Consideration_set_obj.get_consideration_set(g, hiperruta_minimo_camino_desglosad
 
 '''
 #conjunto de consideracion para alternativas observada
-
+print('ver aqui', len(viajes_alternativas_desaglosadas_procesados))
 
 PS = process_frame_alt(viajes_alternativas_desaglosadas_procesados, g)
 PS_correlacion = correlacion(df, PS, dict_tiempos)
