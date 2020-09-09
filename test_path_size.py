@@ -20,11 +20,14 @@ class PathSizeTestCase(TestCase):
             viajes_alternativas_desaglosadas_procesados = dill.load(dill_file)
         viajes_alternativas_procesados_p = defaultdict(lambda: defaultdict(list))
         #viajes_alternativas_procesados_p['T-13-104-PO-15']['M-TB'] = viajes_alternativas_desaglosadas_procesados['T-13-104-PO-15']['M-TB']
-        viajes_alternativas_procesados_p['T-34-270-SN-30']['T-31-134-SN-20'] = viajes_alternativas_desaglosadas_procesados['T-34-270-SN-30']['T-31-134-SN-20']
+        viajes_alternativas_procesados_p['L-34-45-10-SN']['I-33-134-SN-67'] = viajes_alternativas_desaglosadas_procesados['L-34-45-10-SN']['I-33-134-SN-67']
+
         with open(os.path.join('tmp', 'grafo.igraph'), 'rb') as dill_file:
             g = dill.load(dill_file)
 
         self.PS = process_frame_alt(viajes_alternativas_procesados_p, g)
+
+        print('PS', self.PS)
 
         with open(os.path.join('tmp', 'paradero_cercano_dic.pkl'), 'rb') as dill_file:
             self.paradero_cercano_dic = dill.load(dill_file)
@@ -36,5 +39,7 @@ class PathSizeTestCase(TestCase):
         print(correlacion(self.df, self.PS,  self.dict_tiempos))
 
     def test_obtener_arcos(self):
-        print(obtener_arcos(self.df, '109', 'R', 'T-13-104-PO-15', 'E-13-278-PO-15'))
+        print(obtener_arcos(self.df, '109', 'R', 'L-34-45-10-SN','I-33-134-SN-67'))
 
+
+'T-25-228-SN-10/T-25-228-SN-50'

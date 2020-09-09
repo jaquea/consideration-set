@@ -203,6 +203,7 @@ def correlacion(df, PS, dict_tiempos):
             distancia_estrategia = 0
             PS_estrategia = 0
 
+
             for et in PS[llave][est]:
                 PS_etapa = 0
                 distancia_etapa = 0
@@ -210,6 +211,10 @@ def correlacion(df, PS, dict_tiempos):
                 # evaluo todos los servicios de la etapa
                 for (serv, sub, baj) in PS[llave][est][et]:
                     serv_sentido = obtener_servicio_sentido(serv, sub, baj, dict_tiempos)
+
+                    #si el servicio no se proceso en el diccionario de de llave transantiago
+                    if serv_sentido == None:continue
+
                     serv = serv_sentido[0]
                     sentido = serv_sentido[1]
 
@@ -235,6 +240,9 @@ def correlacion(df, PS, dict_tiempos):
                             for (serv2, sub2, baj2) in PS[llave][est2][et2]:  # recorro servicio de la tupla
 
                                 serv_sentido = obtener_servicio_sentido(serv2, sub2, baj2, dict_tiempos)
+
+                                if serv_sentido == None:continue
+
                                 serv2 = serv_sentido[0]
                                 sentido2 = serv_sentido[1]
                                 obtener_arcos2 = obtener_arcos(df, serv2, sentido2, sub2, baj2)

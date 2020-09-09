@@ -70,6 +70,7 @@ with open('outputs\\resumen_geografico_OD.csv', 'wb') as csvFile:
         for destino in viajes[origen]:
             writer.writerow([origen, destino, paraderos_coord_dic[origen][0], paraderos_coord_dic[origen][1], paraderos_coord_dic[destino][0], paraderos_coord_dic[destino][1]])
 
+
 #viajes_p = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
 #viajes_alternativas_procesados_p = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
 #viajes_alternativas_desaglosadas_procesados_p = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
@@ -100,7 +101,6 @@ with open('outputs\\resumen_geografico_OD.csv', 'wb') as csvFile:
 #viajes_alternativas_procesados = viajes_alternativas_procesados_p
 
 #viajes_alternativas_desaglosadas_procesados = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
-#viajes_alternativas_desaglosadas_procesados = viajes_alternativas_desaglosadas_procesados_p
 '''
 #conjunto de consideracion para hiper-rutas
 files_obj = Files(viajes, g, paradero_cercano_dic, dict_servicio_llave_codigoTS)
@@ -113,10 +113,12 @@ Consideration_set_obj.get_consideration_set(g, hiperruta_minimo_camino_desglosad
 
 
 '''
+#viajes_alternativas_desaglosadas_procesados = viajes_alternativas_desaglosadas_procesados_p
 #conjunto de consideracion para alternativas observada
-print('ver aqui', len(viajes_alternativas_desaglosadas_procesados))
 
 PS = process_frame_alt(viajes_alternativas_desaglosadas_procesados, g)
+
+print('calcule primer diccionario')
 PS_correlacion = correlacion(df, PS, dict_tiempos)
 
 print('ya calcule correlacion')
