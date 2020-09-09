@@ -26,6 +26,8 @@ dump_file1 = open('tmp\\viajes_alternativas.pkl', 'rb')
 viajes_alternativas = dill.load(dump_file1)
 dump_file1.close()
 
+print(viajes_alternativas_desaglosadas['T-34-270-SN-30']['T-31-134-SN-20'])
+
 #viajes_p = defaultdict(lambda:defaultdict(lambda:defaultdict(lambda:0)))
 
 #viajes_p['T-34-313-SN-35']['M-SL']= viajes['T-34-313-SN-35']['M-SL']
@@ -54,6 +56,16 @@ with open('outputs\\resumen_pares_OD.csv', 'wb') as csvFile:
 
 lista_de_viajes.sort(key=lambda x: x['n'], reverse=True)
 
+cont = 0
+for elemento in lista_de_viajes:
+
+    origen = elemento['origen']
+    destino = elemento['destino']
+    n = elemento['n']
+    if n>=100:
+        cont += 1
+
+print(n)
 answer = set()
 sampleSize = 200
 answerSize = 0
@@ -62,13 +74,14 @@ lista = []
 seed(200)
 
 while answerSize < sampleSize:
-    r = randint(0,803)
+    r = randint(0,n)
     if r not in answer:
         answerSize += 1
         answer.add(r)
         parOD = lista_de_viajes[r]
         lista.append(parOD)
 
+lista_de_viajes = lista
 print(len(lista_de_viajes))
 print(lista_de_viajes)
 
@@ -120,7 +133,9 @@ for llave1 in paraderos_coord_dic:
         if dist <= radio and llave2 not in paradero_cercano_dic[llave1]:
             paradero_cercano_dic[llave1].append(llave2)
 
-print paradero_cercano_dic['T-13-54-SN-60']
+print ('viajes_reales',viajes_reales['M-PI']['M-SJ'])
+
+exit(0)
 
 viajes_procesados = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
 viajes_alternativas_desaglosadas_procesados  = defaultdict(lambda: defaultdict(list))

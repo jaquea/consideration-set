@@ -320,7 +320,7 @@ for idx, row in df.iterrows():
     origen = OD_paradero[0]
     destino = OD_paradero[1]
     viajes_reales[origen][destino][alternativa] += 1
-    if alternativa not in viajes_alternativas[origen][destino] and origen in viajes and destino in viajes[origen]:
+    if alternativa not in viajes_alternativas[origen][destino]:
         viajes_alternativas_desagregadas[origen][destino].append(alternativa_desglosada)
         viajes_alternativas[origen][destino].append(alternativa)
 
