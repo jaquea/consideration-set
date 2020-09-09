@@ -11,19 +11,19 @@ import csv
 import pandas as pd
 import json
 
-dump_file3 = open('tmp\\hiperruta_minimo.pkl', 'rb')
+dump_file3 = open('../tmp/hiperruta_minimo.pkl', 'rb')
 hiperruta_minimo = dill.load(dump_file3)
 dump_file3.close()
 
-dump_file1 = open('tmp\\grafo.igraph', 'rb')
+dump_file1 = open('../tmp/grafo.igraph', 'rb')
 g = pickle.load(dump_file1)
 dump_file1.close()
 
-dump_file2 = open('tmp\\tiempos.pkl', 'rb')
+dump_file2 = open('../tmp/tiempos.pkl', 'rb')
 dict_tiempos = dill.load(dump_file2)
 dump_file2.close()
 
-dump_file2 = open('tmp\\paradero_cercano_dic.pkl', 'rb')
+dump_file2 = open('../tmp/paradero_cercano_dic.pkl', 'rb')
 paradero_cercano_dic = dill.load(dump_file2)
 dump_file2.close()
 
@@ -31,7 +31,7 @@ dump_file3 = open('frecuencias.pkl', 'rb')
 dict_frecuencia = dill.load(dump_file3)
 dump_file3.close()
 
-dump_file2 = open('tmp/viajes_procesados.pkl', 'rb')
+dump_file2 = open('../tmp/viajes_procesados.pkl', 'rb')
 viajes = dill.load(dump_file2)
 dump_file2.close()
 

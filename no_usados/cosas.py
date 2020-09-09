@@ -11,7 +11,7 @@ import utm
 import matplotlib.pyplot as pl
 import time
 
-dump_file2 = open('tmp/viajes_procesados.pkl', 'rb')
+dump_file2 = open('../tmp/viajes_procesados.pkl', 'rb')
 viajes = dill.load(dump_file2)
 dump_file2.close()
 

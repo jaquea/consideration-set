@@ -92,7 +92,7 @@ with open('outputs\\resumen_geografico_OD.csv', 'wb') as csvFile:
 #viajes_alternativas_desaglosadas_procesados_p['T-34-270-SN-30']['T-31-134-SN-20'] = viajes_alternativas_desaglosadas_procesados['T-34-270-SN-30']['T-31-134-SN-20']
 #viajes_alternativas_desaglosadas_procesados_p['T-13-104-PO-15']['M-TB'] = viajes_alternativas_desaglosadas_procesados['T-13-104-PO-15']['M-TB']
 
-#viajes_p['L-17-19-35-PO']['E-14-170-NS-5'] = viajes['L-17-19-35-PO']['E-14-170-NS-5']
+#viajes_p['M-TB']['T-13-104-PO-15'] = viajes['M-TB']['T-13-104-PO-15']
 
 #viajes = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
 #viajes = viajes_p
@@ -101,15 +101,22 @@ with open('outputs\\resumen_geografico_OD.csv', 'wb') as csvFile:
 #viajes_alternativas_procesados = viajes_alternativas_procesados_p
 
 #viajes_alternativas_desaglosadas_procesados = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
-'''
+
+
+
 #conjunto de consideracion para hiper-rutas
 files_obj = Files(viajes, g, paradero_cercano_dic, dict_servicio_llave_codigoTS)
 files_obj.real_trips()
 hiperruta_minimo_camino_desglosado, cant_max_alternativas_hiperruta, hiperruta_minimo = files_obj.hyperpath_from_travel_file(dict_tiempos, dict_frecuencia)
 
+PS = process_frame_alt(hiperruta_minimo_camino_desglosado, g)
+
+print('calcule primer diccionario')
+PS_correlacion = correlacion(df, PS, dict_tiempos)
+
 Consideration_set_obj = Consideration_set(cant_max_alternativas_hiperruta)
 Consideration_set_obj.get_consideration_set(g, hiperruta_minimo_camino_desglosado, viajes, dict_tiempos, dict_frecuencia,
-                                            paraderos_coord_dic, hiperruta_minimo,dict_servicio_llave_usuario, g_metro, '1', df, paradero_cercano_dic)
+                                            paraderos_coord_dic, hiperruta_minimo,dict_servicio_llave_usuario, g_metro, '1', PS_correlacion)
 
 
 '''
@@ -138,4 +145,4 @@ Consideration_set_obj = Consideration_set(alternativas_maximas(viajes_alternativ
 Consideration_set_obj.get_consideration_set(g, viajes_alternativas_desaglosadas_procesados, viajes, dict_tiempos, dict_frecuencia,
                                             paraderos_coord_dic, viajes_alternativas_procesados,dict_servicio_llave_usuario, g_metro, '2', PS_correlacion)
 
-# el codigo comenzo a corre a las 12:30
+'''
