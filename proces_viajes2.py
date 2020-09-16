@@ -43,16 +43,13 @@ print(len(viajes))
 
 lista_de_viajes= []
 
-with open('outputs\\resumen_pares_OD.csv', 'wb') as csvFile:
-    writer = csv.writer(csvFile)
-    writer.writerow(['origen', 'destino', 'total_viajes'])
 
-    for origen in viajes:
-        for destino in viajes[origen]:
-            n = sum([viajes[origen][destino][camino] for camino in viajes[origen][destino]])
-            dic_viaje = dict(origen=origen, destino=destino, n=n)
-            lista_de_viajes.append(dic_viaje)
-            writer.writerow([origen, destino, n])
+
+for origen in viajes:
+    for destino in viajes[origen]:
+        n = sum([viajes[origen][destino][camino] for camino in viajes[origen][destino]])
+        dic_viaje = dict(origen=origen, destino=destino, n=n)
+        lista_de_viajes.append(dic_viaje)
 
 lista_de_viajes.sort(key=lambda x: x['n'], reverse=True)
 
@@ -136,6 +133,24 @@ for llave1 in paraderos_coord_dic:
 viajes_procesados = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
 viajes_alternativas_desaglosadas_procesados  = defaultdict(lambda: defaultdict(list))
 viajes_alternativas_procesados  = defaultdict(lambda: defaultdict(list))
+
+with open('outputs\\resumen_pares_OD.csv', 'wb') as csvFile:
+    writer = csv.writer(csvFile)
+    writer.writerow(['origen', 'destino', 'total_viajes'])
+
+    for origen in viajes_reales:
+        for destino in viajes_reales[origen]:
+            grupo_subida = paradero_cercano_dic[origen]
+            grupo_bajada = paradero_cercano_dic[destino]
+            tuplas = [(x, y) for x in grupo_subida for y in grupo_bajada]
+            n_total = 0
+
+            for par in tuplas:
+                if par[0] in viajes_reales and par[1] in viajes_reales[par[0]]:
+                    n = sum([viajes_reales[par[0]][par[1]][camino] for camino in viajes_reales[par[0]][par[1]]])
+                    n_total += n
+
+            writer.writerow([origen, destino, n_total])
 
 cont = 0
 for elemento in lista_de_viajes:

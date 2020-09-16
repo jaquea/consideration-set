@@ -89,6 +89,12 @@ df = df[((df['tviaje_min'] > 4))].reset_index(drop=True)
 
 print('viajes con tpo total de viaje superior a 4 min=', df.count()[0])
 
+#para estimacion
+df = df[(df['fecha']!='2018-05-24') & (df['fecha']!='2018-05-25') & (df['fecha']!='2018-05-28') & (df['fecha']!='2018-05-29') & (df['fecha']!='2018-05-30')]
+
+#para prediccion
+#df = df[(df['fecha']=='2018-05-24') & (df['fecha']=='2018-05-25') & (df['fecha']=='2018-05-28') & (df['fecha']=='2018-05-29') & (df['fecha']=='2018-05-30')]
+
 df_metro_reducido = pd.read_csv('inputs\\metro_stations.csv', delimiter=";") #diccionario que formo leonel
 
 dict_metro = defaultdict(str)
