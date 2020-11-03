@@ -2,6 +2,7 @@ import pandas as pd
 
 from atributes_alternatives import Atributes
 from path_size import process_frame_alt, correlacion
+from collections import defaultdict
 
 
 class Consideration_set:
@@ -39,7 +40,7 @@ class Consideration_set:
                         lista.append(alternativas_ele_hip)
 
                     else:
-                        lista.append([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+                        lista.append([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0])
             cont = posicion + 1
 
             headers = [''.join(['AVAIL', unicode(cont)]), ''.join(['CAMINO', unicode(cont)]),
@@ -47,8 +48,10 @@ class Consideration_set:
                        ''.join(['TPOBUS', unicode(cont)]), ''.join(['TPOCAM', unicode(cont)]),
                        ''.join(['TESPINC', unicode(cont)]), ''.join(['TESPINT', unicode(cont)]),
                        ''.join(['BUS_METRO', unicode(cont)]), ''.join(['BUS_BUS', unicode(cont)]),
-                       ''.join(['METRO_BUS', unicode(cont)]), ''.join(['HACIN_METRO', unicode(cont)]),
-                       ''.join(['METRO_METRO', unicode(cont)]), ''.join(['HACIN_ANDEN', unicode(cont)]), ''.join(['PSC', unicode(cont)])]
+                       ''.join(['METRO_BUS', unicode(cont)]), ''.join(['METRO_METRO', unicode(cont)]),
+                       ''.join(['TESPINCBUS', unicode(cont)]), ''.join(['TESPINCMETRO', unicode(cont)]),
+                       ''.join(['TESPINTBUS', unicode(cont)]), ''.join(['TESPINTMETRO', unicode(cont)]),
+                       ''.join(['PSC', unicode(cont)])]
 
             dataframe = pd.DataFrame(lista, columns=headers)
             resultado = pd.concat([resultado, dataframe], axis=1, sort=False)
@@ -96,6 +99,15 @@ class Consideration_set:
 
         if numero == '2':
             new_df.to_csv("outputs\\alternativas_elementales_observadas.csv", encoding='utf-8', index=False, sep=',')
+
+        if numero == '3':
+            new_df.to_csv("outputs\\alternativas_elementales_k_rutas_minimas.csv", encoding='utf-8', index=False, sep=',')
+
+        if numero == '4':
+            new_df.to_csv("outputs\\alternativas_elementales_prediccion.csv", encoding='utf-8', index=False, sep=',')
+
+        if numero == '5':
+            new_df.to_csv("outputs\\alternativas_elementales_labeling.csv", encoding='utf-8', index=False, sep=',')
 
 
 

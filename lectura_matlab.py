@@ -221,7 +221,8 @@ for v in vertices:
                 # print(indice, name, name2, tipo, vertice_cercano)
                 name_par = g.vs[indice]["name"]
                 arcos.append((name, name_par, float('inf'), par[1], name2, g.vs[indice]["name2"]))
-
+print(vertices)
+print(arcos)
 for a in arcos:
     g.add_edge(str(a[0]), str(a[1]), frecuencia=a[2], tpo_viaje=a[3], peso=(1 / float(a[2])) + a[3])
 

@@ -8,7 +8,11 @@ class Atributes:
         self.tpo_bus = 0
         self.tpo_caminata_trasbordo = 0
         self.tpo_espera_inicial = 0
+        self.tpo_espera_inicial_bus = 0
+        self.tpo_espera_inicial_metro = 0
         self.tpo_espera_trasbordo = 0
+        self.tpo_espera_trasbordo_bus = 0
+        self.tpo_espera_trasbordo_metro = 0
         self.trasbordo_bus_metro = 0
         self.trasbordo_bus_bus = 0
         self.trasbordo_metro_bus = 0
@@ -88,9 +92,11 @@ class Atributes:
 
                 if self.tpo_espera_inicial == 0:
                     self.tpo_espera_inicial += tpo_espera
+                    self.tpo_espera_inicial_metro += tpo_espera
 
                 else:
                     self.tpo_espera_trasbordo += tpo_espera
+                    self.tpo_espera_trasbordo_metro += tpo_espera
 
             # si es arco en bus
             else:
@@ -117,9 +123,11 @@ class Atributes:
 
                 if self.tpo_espera_inicial == 0:
                     self.tpo_espera_inicial += tpo_espera
+                    self.tpo_espera_inicial_bus += tpo_espera
 
                 else:
                     self.tpo_espera_trasbordo += tpo_espera
+                    self.tpo_espera_trasbordo_bus += tpo_espera
 
     def tpo_caminata(self, n, paraderos_coord_dic, tipo_nodo_actual, tipo_nodo_anterior, nodo_anterior):
 
@@ -193,4 +201,4 @@ class Atributes:
 
             modo_anterior = modo_actual
 
-        return [self.tpo_metro, self.tpo_bus, self.tpo_caminata_trasbordo, self.tpo_espera_inicial, self.tpo_espera_trasbordo, self.trasbordo_bus_metro, self.trasbordo_bus_bus, self.trasbordo_metro_bus, 0, self.n_trasbordo_metro, 0]
+        return [self.tpo_metro, self.tpo_bus, self.tpo_caminata_trasbordo, self.tpo_espera_inicial, self.tpo_espera_trasbordo, self.trasbordo_bus_metro, self.trasbordo_bus_bus, self.trasbordo_metro_bus, self.n_trasbordo_metro, self.tpo_espera_inicial_bus, self.tpo_espera_inicial_metro, self.tpo_espera_trasbordo_bus, self.tpo_espera_trasbordo_metro]

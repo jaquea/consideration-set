@@ -24,7 +24,7 @@ dump_file3 = open('frecuencias.pkl', 'rb')
 dict_frecuencia = dill.load(dump_file3)
 dump_file3.close()
 
-dump_file2 = open('tmp/viajes_procesados.pkl', 'rb')
+dump_file2 = open('../tmp/viajes_procesados.pkl', 'rb')
 viajes = dill.load(dump_file2)
 dump_file2.close()
 

@@ -6,9 +6,14 @@ import dill
 import pandas as pd #this is how I usually import pandas
 from collections import defaultdict
 import csv
+import os
+import pickle
+import time
 
+from k_shortest_paths import yen_igraph, link_elimination, link_penalty, labeling_approach, simulation
 from random import seed
 from random import randint
+from constants import PROJECT_DIR
 
 dump_file2 = open('tmp\\viajes.pkl', 'rb')
 viajes = dill.load(dump_file2)
@@ -26,7 +31,13 @@ dump_file1 = open('tmp\\viajes_alternativas.pkl', 'rb')
 viajes_alternativas = dill.load(dump_file1)
 dump_file1.close()
 
-print(viajes_alternativas_desaglosadas['T-34-270-SN-30']['T-31-134-SN-20'])
+dump_file1 = open(os.path.join(PROJECT_DIR,'tmp','grafo.igraph'), 'rb')
+g = pickle.load(dump_file1)
+dump_file1.close()
+
+dump_file1 = open(os.path.join(PROJECT_DIR, 'tmp', 'dict_servicio_llave_codigoTS.pkl'), 'rb')
+dict_servicio_llave_codigoTS = pickle.load(dump_file1)
+dump_file1.close()
 
 #viajes_p = defaultdict(lambda:defaultdict(lambda:defaultdict(lambda:0)))
 
@@ -59,16 +70,16 @@ for elemento in lista_de_viajes:
     origen = elemento['origen']
     destino = elemento['destino']
     n = elemento['n']
-    if n>=100:
+    if n>=30:
         cont += 1
 
 print(cont)
 answer = set()
-sampleSize = 200
+sampleSize = 300
 answerSize = 0
 lista = []
 
-seed(200)
+seed(300)
 
 while answerSize < sampleSize:
     r = randint(0,cont)
@@ -80,8 +91,6 @@ while answerSize < sampleSize:
 
 lista_de_viajes = lista
 print(len(lista_de_viajes))
-print(lista_de_viajes)
-
 ###diccionarios de localizacion geografica paraderos y estaciones de metro
 df_paraderos = pd.read_csv('inputs\ConsolidadoParadas.csv')
 df_metro = pd.read_csv('inputs\Diccionario-EstacionesMetro.csv')
@@ -153,10 +162,13 @@ with open('outputs\\resumen_pares_OD.csv', 'wb') as csvFile:
             writer.writerow([origen, destino, n_total])
 
 cont = 0
+
 for elemento in lista_de_viajes:
     cont +=1
     origen = elemento['origen']
     destino = elemento['destino']
+    print('origen', origen, 'destino', destino)
+    start_time = time.clock()
     grupo_subida = paradero_cercano_dic[origen]
     grupo_bajada = paradero_cercano_dic[destino]
     tuplas = [(x, y) for x in grupo_subida for y in grupo_bajada]
@@ -174,9 +186,6 @@ for elemento in lista_de_viajes:
                 if camino not in viajes_alternativas_procesados[origen][destino]:
                     viajes_alternativas_procesados[origen][destino].append(camino)
 
-print('viajes_alternativas_desaglosadas_procesados', len(viajes_alternativas_desaglosadas_procesados))
-print('viajes_alternativas_procesados', len(viajes_alternativas_procesados))
-
 dump_file2 = open('tmp\\viajes_alternativas_desaglosadas_procesados.pkl', 'wb')
 dill.dump(viajes_alternativas_desaglosadas_procesados, dump_file2)
 dump_file2.close()
@@ -193,4 +202,3 @@ dump_file2 = open('tmp\\paradero_cercano_dic.pkl', 'wb')
 dill.dump(paradero_cercano_dic, dump_file2)
 dump_file2.close()
 
-print(len(viajes_procesados))
