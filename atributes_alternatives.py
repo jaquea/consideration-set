@@ -201,4 +201,8 @@ class Atributes:
 
             modo_anterior = modo_actual
 
+        #para contar trasbordos y no etapa en metro
+        if self.n_trasbordo_metro > 0:
+            self.n_trasbordo_metro = self.n_trasbordo_metro - 1
+
         return [self.tpo_metro, self.tpo_bus, self.tpo_caminata_trasbordo, self.tpo_espera_inicial, self.tpo_espera_trasbordo, self.trasbordo_bus_metro, self.trasbordo_bus_bus, self.trasbordo_metro_bus, self.n_trasbordo_metro, self.tpo_espera_inicial_bus, self.tpo_espera_inicial_metro, self.tpo_espera_trasbordo_bus, self.tpo_espera_trasbordo_metro]
