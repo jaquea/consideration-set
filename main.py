@@ -359,7 +359,7 @@ viajes_copia = copy.deepcopy(viajes)
 
 Consideration_set_obj.get_consideration_set(g, viajes_link_elimination_shortest_alternativas_desaglosadas_procesados, viajes_copia, dict_tiempos, dict_frecuencia,
                                             paraderos_coord_dic, viajes_link_elimination_shortest_alternativas_procesados, dict_servicio_llave_usuario, g_metro, '7', PS_correlacion,
-                                            alternativa_observada, viajes_alternativas_procesados, viajes_alternativas_desaglosadas_procesados)
+                                            viajes_alternativas_procesados, viajes_alternativas_desaglosadas_procesados)
 
 #resumen
 

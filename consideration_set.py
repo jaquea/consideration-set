@@ -9,7 +9,7 @@ class Consideration_set:
     def __init__(self, cant_max_alternativas):
         self.cant_max_alternativas = cant_max_alternativas
 
-    def get_consideration_set(self, g, hiperruta_minimo_desglosada, viajes, dict_tiempos, dict_frecuencia, paraderos_coord_dic,  hiperruta_minimo, dict_servicio_llave_usuario, g_metro, numero, PS_correlacion, alternativa_observada, viajes_alternativas_procesados, viajes_alternativas_desaglosadas_procesados):
+    def get_consideration_set(self, g, hiperruta_minimo_desglosada, viajes, dict_tiempos, dict_frecuencia, paraderos_coord_dic,  hiperruta_minimo, dict_servicio_llave_usuario, g_metro, numero, PS_correlacion, viajes_alternativas_procesados, viajes_alternativas_desaglosadas_procesados):
 
         posicion = 0
         resultado = pd.DataFrame()
@@ -22,7 +22,7 @@ class Consideration_set:
             for o in hiperruta_minimo:
                 for d in hiperruta_minimo[o]:
                     contador += 1
-                    print('origen', o, 'destino', d, 'contador', contador, 'posicion', posicion)
+                    #print('origen', o, 'destino', d, 'contador', contador, 'posicion', posicion)
                     # si hay mas caminos que el marcador posicion se agrega c, el camino
                     if len(hiperruta_minimo[o][d]) > posicion:
                         c = hiperruta_minimo_desglosada[o][d][posicion]
@@ -91,97 +91,99 @@ class Consideration_set:
                     new_df.at[i + contador, ''.join(['CHOICE', unicode(cont)])] = 1
                 contador += l
 
-        if alternativa_observada == True:
-            # conjunto con alternativa observada
-            for o in viajes_alternativas_procesados:
-                for d in viajes_alternativas_procesados[o]:
-                    for camino in viajes_alternativas_procesados[o][d]:
-                        if camino not in hiperruta_minimo[o][d]:
-                            posicion = viajes_alternativas_procesados[o][d].index(camino)
-                            c = viajes_alternativas_desaglosadas_procesados[o][d][posicion]
-                            c_no_desglosado = camino
-                            correlacion_camino = PS_correlacion[o][d][c]
-                            atributos_obj = Atributes(c, g, g_metro)
-                            lista_atributos = atributos_obj.get_atributes(dict_tiempos, dict_frecuencia,
-                                                                          paraderos_coord_dic,
-                                                                          dict_servicio_llave_usuario)
+        if numero == '1':
+            new_df.to_csv("outputs\\alternativas_elementales_hiperruta.csv", encoding='utf-8', index=False, sep=',')
 
-                            alternativas_ele_hip = [1, c_no_desglosado,
-                                                    viajes[d][o][c_no_desglosado]] + lista_atributos + [
-                                                       correlacion_camino, 1]
+        if numero == '2':
+            new_df.to_csv("outputs\\alternativas_elementales_observadas.csv", encoding='utf-8', index=False, sep=',')
 
-                            lista = alternativas_ele_hip
+        if numero == '3':
+            new_df.to_csv("outputs\\alternativas_elementales_k_rutas_minimas.csv", encoding='utf-8', index=False,
+                          sep=',')
 
-                            cont = len(hiperruta_minimo[o][d]) + 1
+        if numero == '4':
+            new_df.to_csv("outputs\\alternativas_elementales_prediccion.csv", encoding='utf-8', index=False, sep=',')
 
-                            if cont > self.cant_max_alternativas:
-                                self.cant_max_alternativas = cont
+        if numero == '5':
+            new_df.to_csv("outputs\\alternativas_elementales_labeling.csv", encoding='utf-8', index=False, sep=',')
 
-                            headers = [''.join(['AVAIL', unicode(cont)]), ''.join(['CAMINO', unicode(cont)]),
-                                       ''.join(['VIAJES', unicode(cont)]), ''.join(['TPOMETRO', unicode(cont)]),
-                                       ''.join(['TPOBUS', unicode(cont)]), ''.join(['TPOCAM', unicode(cont)]),
-                                       ''.join(['TESPINC', unicode(cont)]), ''.join(['TESPINT', unicode(cont)]),
-                                       ''.join(['BUS_METRO', unicode(cont)]), ''.join(['BUS_BUS', unicode(cont)]),
-                                       ''.join(['METRO_BUS', unicode(cont)]),
-                                       ''.join(['METRO_METRO', unicode(cont)]),
-                                       ''.join(['TESPINCBUS', unicode(cont)]),
-                                       ''.join(['TESPINCMETRO', unicode(cont)]),
-                                       ''.join(['TESPINTBUS', unicode(cont)]),
-                                       ''.join(['TESPINTMETRO', unicode(cont)]),
-                                       ''.join(['PSC', unicode(cont)]), ''.join(['CHOICE', unicode(cont)])]
+        if numero == '6':
+            new_df.to_csv("outputs\\alternativas_elementales_link_penalty.csv", encoding='utf-8', index=False, sep=',')
 
-                            dataframe = pd.DataFrame([lista], columns=headers)
-                            fila_agregar = resultado[(resultado['ORIGEN'] == o) & (resultado['DESTINO'] == d)]
-                            # pegamos dataframes horizontalmente
-                            df_agregar = pd.concat([fila_agregar, dataframe], axis=1, sort=False)
+        if numero == '7':
+            new_df.to_csv("outputs\\alternativas_elementales_link_elimination.csv", encoding='utf-8', index=False,
+                          sep=',')
 
-                            contador_viajes = viajes[d][o][c_no_desglosado]
-                            new_df_agregar = df_agregar.loc[df_agregar.index.repeat(contador_viajes)].reset_index(
-                                drop=True)
 
-                            new_df = new_df.append(new_df_agregar, sort=False)
+        # conjunto con alternativa observada
+        for o in viajes_alternativas_procesados:
+            for d in viajes_alternativas_procesados[o]:
+                print('o ', o, 'd ', d)
+                for camino in viajes_alternativas_procesados[o][d]:
+                    if camino not in hiperruta_minimo[o][d]:
+                        posicion = viajes_alternativas_procesados[o][d].index(camino)
+                        c = viajes_alternativas_desaglosadas_procesados[o][d][posicion]
+                        c_no_desglosado = camino
+                        correlacion_camino = PS_correlacion[o][d][c]
+                        atributos_obj = Atributes(c, g, g_metro)
+                        lista_atributos = atributos_obj.get_atributes(dict_tiempos, dict_frecuencia,
+                                                                      paraderos_coord_dic,
+                                                                      dict_servicio_llave_usuario)
 
-        if alternativa_observada:
-            if numero == '1':
-                new_df.to_csv("outputs\\alternativas_elementales_hiperruta_obs.csv", encoding='utf-8', index=False, sep=',')
+                        alternativas_ele_hip = [1, c_no_desglosado,
+                                                viajes[d][o][c_no_desglosado]] + lista_atributos + [
+                                                   correlacion_camino, 1]
 
-            if numero == '2':
-                new_df.to_csv("outputs\\alternativas_elementales_observadas_obs.csv", encoding='utf-8', index=False, sep=',')
+                        lista = alternativas_ele_hip
 
-            if numero == '3':
-                new_df.to_csv("outputs\\alternativas_elementales_k_rutas_minimas_obs.csv", encoding='utf-8', index=False, sep=',')
+                        cont = len(hiperruta_minimo[o][d]) + 1
 
-            if numero == '4':
-                new_df.to_csv("outputs\\alternativas_elementales_prediccion_obs.csv", encoding='utf-8', index=False, sep=',')
+                        if cont > self.cant_max_alternativas:
+                            self.cant_max_alternativas = cont
 
-            if numero == '5':
-                new_df.to_csv("outputs\\alternativas_elementales_labeling_obs.csv", encoding='utf-8', index=False, sep=',')
+                        headers = [''.join(['AVAIL', unicode(cont)]), ''.join(['CAMINO', unicode(cont)]),
+                                   ''.join(['VIAJES', unicode(cont)]), ''.join(['TPOMETRO', unicode(cont)]),
+                                   ''.join(['TPOBUS', unicode(cont)]), ''.join(['TPOCAM', unicode(cont)]),
+                                   ''.join(['TESPINC', unicode(cont)]), ''.join(['TESPINT', unicode(cont)]),
+                                   ''.join(['BUS_METRO', unicode(cont)]), ''.join(['BUS_BUS', unicode(cont)]),
+                                   ''.join(['METRO_BUS', unicode(cont)]),
+                                   ''.join(['METRO_METRO', unicode(cont)]),
+                                   ''.join(['TESPINCBUS', unicode(cont)]),
+                                   ''.join(['TESPINCMETRO', unicode(cont)]),
+                                   ''.join(['TESPINTBUS', unicode(cont)]),
+                                   ''.join(['TESPINTMETRO', unicode(cont)]),
+                                   ''.join(['PSC', unicode(cont)]), ''.join(['CHOICE', unicode(cont)])]
 
-            if numero == '6':
-                new_df.to_csv("outputs\\alternativas_elementales_link_penalty_obs.csv", encoding='utf-8', index=False, sep=',')
+                        dataframe = pd.DataFrame([lista], columns=headers)
+                        fila_agregar = resultado[(resultado['ORIGEN'] == o) & (resultado['DESTINO'] == d)]
+                        # pegamos dataframes horizontalmente
+                        df_agregar = pd.concat([fila_agregar, dataframe], axis=1, sort=False)
 
-            if numero == '7':
-                new_df.to_csv("outputs\\alternativas_elementales_link_elimination_obs.csv", encoding='utf-8', index=False, sep=',')
+                        contador_viajes = viajes[d][o][c_no_desglosado]
+                        new_df_agregar = df_agregar.loc[df_agregar.index.repeat(contador_viajes)].reset_index(
+                            drop=True)
 
-        else:
-            if numero == '1':
-                new_df.to_csv("outputs\\alternativas_elementales_hiperruta.csv", encoding='utf-8', index=False, sep=',')
+                        new_df = new_df.append(new_df_agregar, sort=False)
 
-            if numero == '2':
-                new_df.to_csv("outputs\\alternativas_elementales_observadas.csv", encoding='utf-8', index=False, sep=',')
+        if numero == '1':
+            new_df.to_csv("outputs\\alternativas_elementales_hiperruta_obs.csv", encoding='utf-8', index=False, sep=',')
 
-            if numero == '3':
-                new_df.to_csv("outputs\\alternativas_elementales_k_rutas_minimas.csv", encoding='utf-8', index=False, sep=',')
+        if numero == '2':
+            new_df.to_csv("outputs\\alternativas_elementales_observadas_obs.csv", encoding='utf-8', index=False, sep=',')
 
-            if numero == '4':
-                new_df.to_csv("outputs\\alternativas_elementales_prediccion.csv", encoding='utf-8', index=False, sep=',')
+        if numero == '3':
+            new_df.to_csv("outputs\\alternativas_elementales_k_rutas_minimas_obs.csv", encoding='utf-8', index=False, sep=',')
 
-            if numero == '5':
-                new_df.to_csv("outputs\\alternativas_elementales_labeling.csv", encoding='utf-8', index=False, sep=',')
+        if numero == '4':
+            new_df.to_csv("outputs\\alternativas_elementales_prediccion_obs.csv", encoding='utf-8', index=False, sep=',')
 
-            if numero == '6':
-                new_df.to_csv("outputs\\alternativas_elementales_link_penalty.csv", encoding='utf-8', index=False, sep=',')
+        if numero == '5':
+            new_df.to_csv("outputs\\alternativas_elementales_labeling_obs.csv", encoding='utf-8', index=False, sep=',')
 
-            if numero == '7':
-                new_df.to_csv("outputs\\alternativas_elementales_link_elimination.csv", encoding='utf-8', index=False, sep=',')
+        if numero == '6':
+            new_df.to_csv("outputs\\alternativas_elementales_link_penalty_obs.csv", encoding='utf-8', index=False, sep=',')
+
+        if numero == '7':
+            new_df.to_csv("outputs\\alternativas_elementales_link_elimination_obs.csv", encoding='utf-8', index=False, sep=',')
+
 
