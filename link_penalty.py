@@ -1,4 +1,5 @@
 from k_shortest_paths import link_penalty
+from k_shortest_paths import link_penalty_observed_parameters
 from collections import defaultdict
 import dill
 import os
@@ -22,8 +23,18 @@ dump_file2 = open('tmp\\paradero_cercano_dic.pkl', 'rb')
 paradero_cercano_dic = dill.load(dump_file2)
 dump_file2.close()
 
+dump_file2 = open('tmp\\paradero_cercano_dic.pkl', 'rb')
+paradero_cercano_dic = dill.load(dump_file2)
+dump_file2.close()
+
+
 viajes_link_penalty_shortest_alternativas_desaglosadas_procesados = defaultdict(lambda: defaultdict(list))
 viajes_link_penalty_shortest_alternativas_procesados = defaultdict(lambda: defaultdict(list))
+
+
+viajes_link_penalty_shortest_alternativas_desaglosadas_procesados_observed_parameters = defaultdict(lambda: defaultdict(list))
+viajes_link_penalty_shortest_alternativas_procesados_observed_parameters = defaultdict(lambda: defaultdict(list))
+
 
 cont = 0
 num_k = 30
@@ -37,7 +48,7 @@ for origen in viajes_alternativas_procesados:
         destination_index = g.vs.find(name2=destino).index
 
         start_time = time.clock()
-        k_paths_link_penalty = link_penalty(g, origin_index, destination_index, weights, dict_servicio_llave_codigoTS)
+        k_paths_link_penalty = link_penalty(g, origin_index, destination_index, num_k, weights, dict_servicio_llave_codigoTS, paradero_cercano_dic)
         print "link_penalty", time.clock() - start_time, "seconds"
 
         # para link penalty
@@ -63,3 +74,38 @@ dump_file2 = open('tmp\\viajes_link_penalty_shortest_alternativas_procesados.pkl
 dill.dump(viajes_link_penalty_shortest_alternativas_procesados, dump_file2)
 dump_file2.close()
 
+#Link penalty with observed parameters
+
+for origen in viajes_alternativas_procesados:
+    for destino in viajes_alternativas_procesados[origen]:
+        print('origen', origen, 'destino', destino)
+
+        origin_index = g.vs.find(name2=origen).index
+        destination_index = g.vs.find(name2=destino).index
+
+        start_time = time.clock()
+        k_paths_link_penalty = link_penalty_observed_parameters(g, origin_index, destination_index, num_k, weights, dict_servicio_llave_codigoTS, paradero_cercano_dic)
+        print "link_penalty", time.clock() - start_time, "seconds"
+
+        # para link penalty
+        caminos_desglosados = k_paths_link_penalty[0]
+        caminos_resumidos = k_paths_link_penalty[1]
+        costos = k_paths_link_penalty[2]
+        contador = 0
+
+        for path in caminos_resumidos:
+            if path not in viajes_link_penalty_shortest_alternativas_procesados_observed_parameters[origen][destino]:
+                costo_path = costos[contador]
+                camino = caminos_desglosados[contador]
+
+                viajes_link_penalty_shortest_alternativas_desaglosadas_procesados_observed_parameters[origen][destino].append(camino)
+                viajes_link_penalty_shortest_alternativas_procesados_observed_parameters[origen][destino].append(path)
+            contador += 1
+
+dump_file2 = open('tmp\\viajes_link_penalty_shortest_alternativas_desaglosadas_procesados_observed_parameters.pkl', 'wb')
+dill.dump(viajes_link_penalty_shortest_alternativas_desaglosadas_procesados_observed_parameters, dump_file2)
+dump_file2.close()
+
+dump_file2 = open('tmp\\viajes_link_penalty_shortest_alternativas_procesados_observed_parameters.pkl', 'wb')
+dill.dump(viajes_link_penalty_shortest_alternativas_procesados_observed_parameters, dump_file2)
+dump_file2.close()

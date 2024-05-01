@@ -8,6 +8,7 @@ import json
 import pickle
 import time
 from collections import defaultdict
+import random
 
 import dill
 from hyperpath import Hyperpath
@@ -18,9 +19,9 @@ dump_file2 = open('tmp\\paradero_cercano_dic.pkl', 'rb')
 paradero_cercano_dic = dill.load(dump_file2)
 dump_file2.close()
 
-dump_file1 = open('tmp\\dict_servicio_llave_codigoTS.pkl', 'rb')
-dict_servicio_llave_codigoTS = pickle.load(dump_file1)
-dump_file1.close()
+#dump_file1 = open('tmp\\dict_servicio_llave_codigoTS.pkl', 'rb')
+#dict_servicio_llave_codigoTS = dill.load(dump_file1)
+#dump_file1.close()
 
 dump_file1 = open('tmp\\grafo.igraph', 'rb')
 g = pickle.load(dump_file1)
@@ -89,11 +90,8 @@ df = df[((df['tviaje_min'] > 4))].reset_index(drop=True)
 
 print('viajes con tpo total de viaje superior a 4 min=', df.count()[0])
 
-#para prediccion
-df_prediccion = df[(df['fecha']=='2018-05-24') | (df['fecha']=='2018-05-25') | (df['fecha']=='2018-05-28') | (df['fecha']=='2018-05-29') | (df['fecha']=='2018-05-30')]
-
 #para estimacion
-df = df[(df['fecha']!='2018-05-24') & (df['fecha']!='2018-05-25') & (df['fecha']!='2018-05-28') & (df['fecha']!='2018-05-29') & (df['fecha']!='2018-05-30')]
+#df = df[(df['fecha']!='2018-05-24') & (df['fecha']!='2018-05-25') & (df['fecha']!='2018-05-28') & (df['fecha']!='2018-05-29') & (df['fecha']!='2018-05-30')]
 
 df_metro_reducido = pd.read_csv('inputs\\metro_stations.csv', delimiter=";") #diccionario que formo leonel
 
@@ -142,7 +140,23 @@ def ODparaderos(x):
 
 df['idx_OD_paradero'] = df[['netapa', 'paraderosubida', 'paraderobajada','tipotransporte_1era', 'tipotransporte_2da', 'tipotransporte_3era']].apply(ODparaderos, axis=1)
 
-df_prediccion['idx_OD_paradero'] = df_prediccion[['netapa', 'paraderosubida', 'paraderobajada','tipotransporte_1era', 'tipotransporte_2da', 'tipotransporte_3era']].apply(ODparaderos, axis=1)
+# separamos el 20% de pares OD para prediccion y 80% de pares od para estimacion
+lista_pares_od = df['idx_OD_paradero'].unique().tolist()
+
+# Mezclar la lista de elementos de manera aleatoria
+random.shuffle(lista_pares_od)
+
+# Calcular el índice para dividir en 80% y 20%
+indice_division = int(len(lista_pares_od) * 0.8)
+
+# Dividir la lista en 80% y 20%
+lista_pares_od_estimacion = lista_pares_od[:indice_division]
+lista_pares_od_prediccion = lista_pares_od[indice_division:]
+
+print('lista_pares_od_estimacion', len(lista_pares_od_estimacion))
+print('lista_pares_od_prediccion', len(lista_pares_od_prediccion))
+
+#df_prediccion['idx_OD_paradero'] = df_prediccion[['netapa', 'paraderosubida', 'paraderobajada','tipotransporte_1era', 'tipotransporte_2da', 'tipotransporte_3era']].apply(ODparaderos, axis=1)
 
 def alternativas(x):
 
@@ -281,90 +295,185 @@ df['alternativa_viaje']=df[['netapa',
                             'paraderosubida_3era','paraderobajada_3era','serv_3era_etapa',
                             'tipotransporte_1era', 'tipotransporte_2da', 'tipotransporte_3era']].apply(alternativas_func1, axis=1)
 
-df_prediccion['alternativa_viaje']=df_prediccion[['netapa',
-                            'paraderosubida_1era','paraderobajada_1era','serv_1era_etapa',
-                            'paraderosubida_2da','paraderobajada_2da','serv_2da_etapa',
-                            'paraderosubida_3era','paraderobajada_3era','serv_3era_etapa',
-                            'tipotransporte_1era', 'tipotransporte_2da', 'tipotransporte_3era']].apply(alternativas_func1, axis=1)
-
-
+#en la alternativa se encuentra la ruta interna del metro
 df['alternativa_viaje_desglosada']=df[['netapa',
                             'paraderosubida_1era','paraderobajada_1era','serv_1era_etapa',
                             'paraderosubida_2da','paraderobajada_2da','serv_2da_etapa',
                             'paraderosubida_3era','paraderobajada_3era','serv_3era_etapa',
                             'tipotransporte_1era', 'tipotransporte_2da', 'tipotransporte_3era']].apply(alternativas_func2, axis=1)
 
-df_prediccion['alternativa_viaje_desglosada']=df_prediccion[['netapa',
-                            'paraderosubida_1era','paraderobajada_1era','serv_1era_etapa',
-                            'paraderosubida_2da','paraderobajada_2da','serv_2da_etapa',
-                            'paraderosubida_3era','paraderobajada_3era','serv_3era_etapa',
-                            'tipotransporte_1era', 'tipotransporte_2da', 'tipotransporte_3era']].apply(alternativas_func2, axis=1)
+#para prediccion para distintos pares OD
+df_prediccion_distintos_pares_OD = df[((df['fecha']=='2018-05-24') | (df['fecha']=='2018-05-25') | (df['fecha']=='2018-05-28') | (df['fecha']=='2018-05-29') | (df['fecha']=='2018-05-30')) & (df['idx_OD_paradero'].isin(lista_pares_od_prediccion))]
 
-df_sin_ZP = df[(df['tipotransporte_1era']!='ZP') & (df['tipotransporte_2da']!='ZP') &  (df['tipotransporte_3era']!='ZP') & (df['id']!='-')]
+#para prediccion para mismos pares OD
+df_prediccion_mismos_pares_OD = df[((df['fecha']=='2018-05-24') | (df['fecha']=='2018-05-25') | (df['fecha']=='2018-05-28') | (df['fecha']=='2018-05-29') | (df['fecha']=='2018-05-30')) & (df['idx_OD_paradero'].isin(lista_pares_od_estimacion))]
 
-print('viajes que no se realizan en zona paga', df_sin_ZP.count()[0])
+#dataset con la tercera semana para estimacion
+df_1semana = df[((df['fecha']=='2018-05-16') | (df['fecha']=='2018-05-17') | (df['fecha']=='2018-05-18') | (df['fecha']=='2018-05-22') | (df['fecha']=='2018-05-23')) & (df['idx_OD_paradero'].isin(lista_pares_od_estimacion))]
 
-df_sin_ZP_sin_metro = df_sin_ZP[(df_sin_ZP['id']!='-') & ((df_sin_ZP['netapa']>1)|((df_sin_ZP['netapa']==1) & (df_sin_ZP['tipotransporte_1era']!='METRO')))]
+#dataset con la tercera y segunda semana para estimacion
+df_2semanas = df[((df['fecha']=='2018-05-16') | (df['fecha']=='2018-05-17') | (df['fecha']=='2018-05-18') | (df['fecha']=='2018-05-22') | (df['fecha']=='2018-05-23')
+                | (df['fecha']=='2018-05-15') | (df['fecha']=='2018-05-14') | (df['fecha']=='2018-05-11') | (df['fecha']=='2018-05-10') | (df['fecha']=='2018-05-09')) & (df['idx_OD_paradero'].isin(lista_pares_od_estimacion))]
+
+#dataset con la tercera, segunda y primera semana para estimacion
+df_3semanas = df[((df['fecha']=='2018-05-16') | (df['fecha']=='2018-05-17') | (df['fecha']=='2018-05-18') | (df['fecha']=='2018-05-22') | (df['fecha']=='2018-05-23')
+                | (df['fecha']=='2018-05-15') | (df['fecha']=='2018-05-14') | (df['fecha']=='2018-05-11') | (df['fecha']=='2018-05-10') | (df['fecha']=='2018-05-09')
+                | (df['fecha']=='2018-05-08') | (df['fecha']=='2018-05-07') | (df['fecha']=='2018-05-04') | (df['fecha']=='2018-05-03') | (df['fecha']=='2018-05-02')) & (df['idx_OD_paradero'].isin(lista_pares_od_estimacion))]
+
+
+#df_prediccion['alternativa_viaje']=df_prediccion[['netapa',
+#                            'paraderosubida_1era','paraderobajada_1era','serv_1era_etapa',
+#                            'paraderosubida_2da','paraderobajada_2da','serv_2da_etapa',
+#                            'paraderosubida_3era','paraderobajada_3era','serv_3era_etapa',
+#                            'tipotransporte_1era', 'tipotransporte_2da', 'tipotransporte_3era']].apply(alternativas_func1, axis=1)
+
+
+
+
+#df_prediccion['alternativa_viaje_desglosada']=df_prediccion[['netapa',
+#                            'paraderosubida_1era','paraderobajada_1era','serv_1era_etapa',
+#                            'paraderosubida_2da','paraderobajada_2da','serv_2da_etapa',
+#                            'paraderosubida_3era','paraderobajada_3era','serv_3era_etapa',
+#                            'tipotransporte_1era', 'tipotransporte_2da', 'tipotransporte_3era']].apply(alternativas_func2, axis=1)
+
+#df_sin_ZP = df[(df['tipotransporte_1era']!='ZP') & (df['tipotransporte_2da']!='ZP') &  (df['tipotransporte_3era']!='ZP') & (df['id']!='-')]
+
+#print('viajes que no se realizan en zona paga', df_sin_ZP.count()[0])
+
+#df_sin_ZP_sin_metro = df_sin_ZP[(df_sin_ZP['id']!='-') & ((df_sin_ZP['netapa']>1)|((df_sin_ZP['netapa']==1) & (df_sin_ZP['tipotransporte_1era']!='METRO')))]
 
 
 #print('viajes que no se realizan en zona paga ni solo en metro', df_sin_ZP_sin_metro.count()[0])
 
-viajes = defaultdict(lambda:defaultdict(lambda:defaultdict(lambda:0)))
-#diccionario para armar conjunto de consideracion con alternativas observadas
-viajes_alternativas_desagregadas = defaultdict(lambda: defaultdict(list))
-viajes_alternativas = defaultdict(lambda: defaultdict(list))
-viajes_reales = defaultdict(lambda:defaultdict(lambda:defaultdict(lambda:0)))
+#viajes = defaultdict(lambda:defaultdict(lambda:defaultdict(lambda:0)))
+
+#diccionario para armar conjunto de consideracion con alternativas observadas usando la tercera semana
+viajes_alternativas_desagregadas_1semana = defaultdict(lambda: defaultdict(list))
+viajes_alternativas_1semana = defaultdict(lambda: defaultdict(list))
+viajes_reales_1semana = defaultdict(lambda:defaultdict(lambda:defaultdict(lambda:0)))
+
+#diccionarios para la tercera semana de estimacion
+for idx, row in df_1semana.iterrows():
+    OD_paradero = row['idx_OD_paradero'].split("/")
+    alternativa = row['alternativa_viaje']
+    alternativa_desglosada = row['alternativa_viaje_desglosada']
+    origen = OD_paradero[0]
+    destino = OD_paradero[1]
+    viajes_reales_1semana[origen][destino][alternativa] += 1
+    if alternativa not in viajes_alternativas_1semana[origen][destino]:
+        viajes_alternativas_desagregadas_1semana[origen][destino].append(alternativa_desglosada)
+        viajes_alternativas_1semana[origen][destino].append(alternativa)
+
+
+#diccionario para armar conjunto de consideracion con alternativas observadas usando la segunda y tercera semana
+viajes_alternativas_desagregadas_2semanas = defaultdict(lambda: defaultdict(list))
+viajes_alternativas_2semanas = defaultdict(lambda: defaultdict(list))
+viajes_reales_2semanas = defaultdict(lambda:defaultdict(lambda:defaultdict(lambda:0)))
+
+#diccionarios para la segunda y tercera semana de estimacion
+for idx, row in df_2semanas.iterrows():
+    OD_paradero = row['idx_OD_paradero'].split("/")
+    alternativa = row['alternativa_viaje']
+    alternativa_desglosada = row['alternativa_viaje_desglosada']
+    origen = OD_paradero[0]
+    destino = OD_paradero[1]
+    viajes_reales_2semanas[origen][destino][alternativa] += 1
+    if alternativa not in viajes_alternativas_2semanas[origen][destino]:
+        viajes_alternativas_desagregadas_2semanas[origen][destino].append(alternativa_desglosada)
+        viajes_alternativas_2semanas[origen][destino].append(alternativa)
+
+
+#diccionario para armar conjunto de consideracion con alternativas observadas usando las tres semanas
+viajes_alternativas_desagregadas_3semanas = defaultdict(lambda: defaultdict(list))
+viajes_alternativas_3semanas = defaultdict(lambda: defaultdict(list))
+viajes_reales_3semanas = defaultdict(lambda:defaultdict(lambda:defaultdict(lambda:0)))
+
+#diccionarios para las tres semanas de estimacion
+for idx, row in df_3semanas.iterrows():
+    OD_paradero = row['idx_OD_paradero'].split("/")
+    alternativa = row['alternativa_viaje']
+    alternativa_desglosada = row['alternativa_viaje_desglosada']
+    origen = OD_paradero[0]
+    destino = OD_paradero[1]
+    viajes_reales_3semanas[origen][destino][alternativa] += 1
+    if alternativa not in viajes_alternativas_3semanas[origen][destino]:
+        viajes_alternativas_desagregadas_3semanas[origen][destino].append(alternativa_desglosada)
+        viajes_alternativas_3semanas[origen][destino].append(alternativa)
+
 
 #diccionarios para prediccion
-viajes_prediccion_alternativas_desagregadas = defaultdict(lambda: defaultdict(list))
-viajes_prediccion_alternativas = defaultdict(lambda: defaultdict(list))
-viajes_prediccion_reales = defaultdict(lambda:defaultdict(lambda:defaultdict(lambda:0)))
-
-for idx, row in df_sin_ZP_sin_metro.iterrows():
-    OD_paradero = row['idx_OD_paradero'].split("/")
-    alternativa = row['alternativa_viaje']
-    origen = OD_paradero[0]
-    destino = OD_paradero[1]
-    viajes[origen][destino][alternativa] += 1
-
-for idx, row in df.iterrows():
-    OD_paradero = row['idx_OD_paradero'].split("/")
-    alternativa = row['alternativa_viaje']
-    alternativa_desglosada = row['alternativa_viaje_desglosada']
-    origen = OD_paradero[0]
-    destino = OD_paradero[1]
-    viajes_reales[origen][destino][alternativa] += 1
-    if alternativa not in viajes_alternativas[origen][destino]:
-        viajes_alternativas_desagregadas[origen][destino].append(alternativa_desglosada)
-        viajes_alternativas[origen][destino].append(alternativa)
+viajes_prediccion_distintos_pares_OD_alternativas_desagregadas = defaultdict(lambda: defaultdict(list))
+viajes_prediccion_distintos_pares_OD_alternativas = defaultdict(lambda: defaultdict(list))
+viajes_prediccion_distintos_pares_OD_reales = defaultdict(lambda:defaultdict(lambda:defaultdict(lambda:0)))
 
 #para prediccion
-for idx, row in df_prediccion.iterrows():
+for idx, row in df_prediccion_distintos_pares_OD.iterrows():
     OD_paradero = row['idx_OD_paradero'].split("/")
     alternativa = row['alternativa_viaje']
     alternativa_desglosada = row['alternativa_viaje_desglosada']
     origen = OD_paradero[0]
     destino = OD_paradero[1]
-    viajes_prediccion_reales[origen][destino][alternativa] += 1
-    if alternativa not in viajes_prediccion_alternativas[origen][destino]:
-        viajes_prediccion_alternativas_desagregadas[origen][destino].append(alternativa_desglosada)
-        viajes_prediccion_alternativas[origen][destino].append(alternativa)
+    viajes_prediccion_distintos_pares_OD_reales[origen][destino][alternativa] += 1
+    if alternativa not in viajes_prediccion_distintos_pares_OD_alternativas[origen][destino]:
+        viajes_prediccion_distintos_pares_OD_alternativas_desagregadas[origen][destino].append(alternativa_desglosada)
+        viajes_prediccion_distintos_pares_OD_alternativas[origen][destino].append(alternativa)
+
+#diccionarios para prediccion
+viajes_prediccion_mismos_pares_OD_alternativas_desagregadas = defaultdict(lambda: defaultdict(list))
+viajes_prediccion_mismos_pares_OD_alternativas = defaultdict(lambda: defaultdict(list))
+viajes_prediccion_mismos_pares_OD_reales = defaultdict(lambda:defaultdict(lambda:defaultdict(lambda:0)))
+
+#para prediccion
+for idx, row in df_prediccion_mismos_pares_OD.iterrows():
+    OD_paradero = row['idx_OD_paradero'].split("/")
+    alternativa = row['alternativa_viaje']
+    alternativa_desglosada = row['alternativa_viaje_desglosada']
+    origen = OD_paradero[0]
+    destino = OD_paradero[1]
+    viajes_prediccion_mismos_pares_OD_reales[origen][destino][alternativa] += 1
+    if alternativa not in viajes_prediccion_mismos_pares_OD_alternativas[origen][destino]:
+        viajes_prediccion_mismos_pares_OD_alternativas_desagregadas[origen][destino].append(alternativa_desglosada)
+        viajes_prediccion_mismos_pares_OD_alternativas[origen][destino].append(alternativa)
 
 
-dump_file1 = open('tmp\\viajes_alternativas_desglosadas.pkl', 'wb')
-pickle.dump(viajes_alternativas_desagregadas, dump_file1)
+dump_file1 = open('tmp\\viajes_alternativas_desglosadas_1semana.pkl', 'wb')
+pickle.dump(viajes_alternativas_desagregadas_1semana, dump_file1)
 dump_file1.close()
 
-dump_file1 = open('tmp\\viajes_prediccion_alternativas_desagregadas.pkl', 'wb')
-pickle.dump(viajes_prediccion_alternativas_desagregadas, dump_file1)
+dump_file1 = open('tmp\\viajes_alternativas_desglosadas_2semanas.pkl', 'wb')
+pickle.dump(viajes_alternativas_desagregadas_2semanas, dump_file1)
 dump_file1.close()
 
-dump_file1 = open('tmp\\viajes_alternativas.pkl', 'wb')
-pickle.dump(viajes_alternativas, dump_file1)
+dump_file1 = open('tmp\\viajes_alternativas_desglosadas_3semanas.pkl', 'wb')
+pickle.dump(viajes_alternativas_desagregadas_3semanas, dump_file1)
 dump_file1.close()
 
-dump_file1 = open('tmp\\viajes_prediccion_alternativas.pkl', 'wb')
-pickle.dump(viajes_prediccion_alternativas, dump_file1)
+dump_file1 = open('tmp\\viajes_prediccion_mismos_pares_OD_alternativas_desagregadas.pkl', 'wb')
+pickle.dump(viajes_prediccion_mismos_pares_OD_alternativas_desagregadas, dump_file1)
+dump_file1.close()
+
+dump_file1 = open('tmp\\viajes_prediccion_distintos_pares_OD_alternativas_desagregadas.pkl', 'wb')
+pickle.dump(viajes_prediccion_distintos_pares_OD_alternativas_desagregadas, dump_file1)
+dump_file1.close()
+
+dump_file1 = open('tmp\\viajes_alternativas_1semana.pkl', 'wb')
+pickle.dump(viajes_alternativas_1semana, dump_file1)
+dump_file1.close()
+
+dump_file1 = open('tmp\\viajes_alternativas_2semanas.pkl', 'wb')
+pickle.dump(viajes_alternativas_2semanas, dump_file1)
+dump_file1.close()
+
+dump_file1 = open('tmp\\viajes_alternativas_3semanas.pkl', 'wb')
+pickle.dump(viajes_alternativas_3semanas, dump_file1)
+dump_file1.close()
+
+dump_file1 = open('tmp\\viajes_prediccion_mismos_pares_OD_alternativas.pkl', 'wb')
+pickle.dump(viajes_prediccion_mismos_pares_OD_alternativas, dump_file1)
+dump_file1.close()
+
+dump_file1 = open('tmp\\viajes_prediccion_distintos_pares_OD_alternativas.pkl', 'wb')
+pickle.dump(viajes_prediccion_distintos_pares_OD_alternativas, dump_file1)
 dump_file1.close()
 
 dump_file1 = open('tmp\\dict_servicio_llave_codigoTS.pkl', 'wb')
@@ -375,18 +484,26 @@ dump_file1 = open('tmp\\dict_servicio_llave_usuario.pkl', 'wb')
 pickle.dump(dict_servicio_llave_usuario, dump_file1)
 dump_file1.close()
 
-dump_file2 = open('tmp\\viajes.pkl', 'wb')
-dill.dump(viajes, dump_file2)
+#dump_file2 = open('tmp\\viajes.pkl', 'wb')
+#dill.dump(viajes, dump_file2)
+#dump_file2.close()
+
+dump_file2 = open('tmp\\viajes_reales_1semana.pkl', 'wb')
+dill.dump(viajes_reales_1semana, dump_file2)
 dump_file2.close()
 
-dump_file2 = open('tmp\\viajes_reales.pkl', 'wb')
-dill.dump(viajes_reales, dump_file2)
+dump_file2 = open('tmp\\viajes_reales_2semanas.pkl', 'wb')
+dill.dump(viajes_reales_2semanas, dump_file2)
 dump_file2.close()
 
-dump_file2 = open('tmp\\viajes_prediccion_reales.pkl', 'wb')
-dill.dump(viajes_prediccion_reales, dump_file2)
+dump_file2 = open('tmp\\viajes_reales_3semanas.pkl', 'wb')
+dill.dump(viajes_reales_3semanas, dump_file2)
 dump_file2.close()
 
-#df_eval = df_sin_ZP[(df_sin_ZP['id']!='-') & ((df_sin_ZP['netapa']>1)|((df_sin_ZP['netapa']==1) & (df_sin_ZP['tipotransporte_1era']!='METRO')))].groupby(['idx_OD_paradero'])['idx_OD_paradero'].size().nlargest(100)
+dump_file2 = open('tmp\\viajes_prediccion_mismos_pares_OD_reales.pkl', 'wb')
+dill.dump(viajes_prediccion_mismos_pares_OD_reales, dump_file2)
+dump_file2.close()
 
-#print(df_eval)
+dump_file2 = open('tmp\\viajes_prediccion_distintos_pares_OD_reales.pkl', 'wb')
+dill.dump(viajes_prediccion_distintos_pares_OD_reales, dump_file2)
+dump_file2.close()

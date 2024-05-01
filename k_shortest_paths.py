@@ -192,8 +192,8 @@ def intersection(lst1, lst2):
     else:
         return False
 
-def yen_igraph(g, source, target, num_k, weights, dict_servicio_llave_codigoTS):
-    import queue
+def yen_igraph(g, source, target, num_k, weights, dict_servicio_llave_codigoTS, paradero_cercano_dic):
+    import Queue
     graph_get_shortest_path = g.copy()
     tipo_nodo_origen = graph_get_shortest_path.vs["tipo"][source]
     tipo_nodo_destino = graph_get_shortest_path.vs["tipo"][target]
@@ -218,13 +218,31 @@ def yen_igraph(g, source, target, num_k, weights, dict_servicio_llave_codigoTS):
             edge = graph_get_shortest_path.get_eid(j, target, directed=True, error=True)
             graph_get_shortest_path.es[edge]["peso"] = 0
 
+    for arc in g.get_edgelist():
+        arc_origen = arc[0]
+        arc_destino = arc[1]
+        tipo_nodo_origen = g.vs["tipo"][arc_origen]
+        tipo_nodo_destino = g.vs["tipo"][arc_destino]
+
+        edge_g = g.get_eid(arc_origen, arc_destino, directed=True, error=True)
+
+        # si se baja de un servicio a un paradero y el paradero no es el destino se considera una penalizacion por trasbordo
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'servicio' and arc_destino != target and \
+                g.vs[arc_destino]["name2"] not in paradero_cercano_dic[g.vs[target]["name2"]]:
+
+            if g.vs[arc_origen]["name2"][:2] == 'M-' and g.vs[arc_destino]["name2"][:2] == 'M-':
+                graph_get_shortest_path.es[edge]['peso'] = g.es[edge_g]['peso'] + 1
+
+            else:
+                graph_get_shortest_path.es[edge]['peso'] = g.es[edge_g]['peso'] + 1
+
     #Shortest path from the source to the target
     A = [graph_get_shortest_path.get_shortest_paths(source, to=target, weights=weights, output="vpath")[0]]
 
     A_costs = [path_cost(graph_get_shortest_path, A[0], weights)]
 
     #Initialize the heap to store the potential kth shortest path
-    B = queue.PriorityQueue()
+    B = Queue.PriorityQueue()
     lista_caminos_distintos = []
     A_path_simple = []
     A_path_resumido = []
@@ -350,8 +368,199 @@ def yen_igraph(g, source, target, num_k, weights, dict_servicio_llave_codigoTS):
 
     return A_path_simple, A_path_resumido, A_costs
 
-def link_elimination(g, source, target, num_k, weights, dict_servicio_llave_codigoTS):
-    import queue
+
+def yen_igraph_observed_parameters(g, source, target, num_k, weights, dict_servicio_llave_codigoTS, paradero_cercano_dic):
+    import Queue
+    graph_get_shortest_path = g.copy()
+    tipo_nodo_origen = graph_get_shortest_path.vs["tipo"][source]
+    tipo_nodo_destino = graph_get_shortest_path.vs["tipo"][target]
+
+    if source == target:
+        return [source], [source], [0]
+
+    # setiamos en peso igual a cero a todos los arcos de caminata que estan proximos al origen
+    # esto hara que los k caminos se busquen en el circulo de radio 100 mts
+    for j in graph_get_shortest_path.neighborhood(source, order=1, mode=OUT)[1:]:
+        tipo_nodo_vecino = graph_get_shortest_path.vs["tipo"][j]
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_vecino == 'paradero':
+            edge = graph_get_shortest_path.get_eid(source, j, directed=True, error=True)
+            # print(graph_get_shortest_path.es[edge].attributes())
+            graph_get_shortest_path.es[edge]['peso'] = 0
+
+    # setiamos en peso igual a cero a todos los arcos de caminata que estan proximos al destino
+    # esto hara que los k caminos se busquen en el circulo de radio 100 mts
+    for j in graph_get_shortest_path.neighborhood(target, order=1, mode=IN)[1:]:
+        tipo_nodo_vecino = graph_get_shortest_path.vs["tipo"][j]
+        if tipo_nodo_destino == 'paradero' and tipo_nodo_vecino == 'paradero':
+            edge = graph_get_shortest_path.get_eid(j, target, directed=True, error=True)
+            graph_get_shortest_path.es[edge]["peso"] = 0
+
+    for arc in g.get_edgelist():
+        arc_origen = arc[0]
+        arc_destino = arc[1]
+        tipo_nodo_origen = g.vs["tipo"][arc_origen]
+        tipo_nodo_destino = g.vs["tipo"][arc_destino]
+
+        edge_g = g.get_eid(arc_origen, arc_destino, directed=True, error=True)
+
+        edge = graph_get_shortest_path.get_eid(arc_origen, arc_destino, directed=True, error=True)
+        # si el arco es paradero->servicio se multiplica por 1.4 el tiempo de espera
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'servicio':
+            graph_get_shortest_path.es[edge]['peso'] = 1.4 * g.es[edge_g]['peso']
+
+        # si el arco es paradero->paradero se multiplica por 3 el tiempo de caminata y se asigna peso cero a caminaras alrededor de origen y destino
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'paradero':
+            if arc_origen == source or arc_destino == target:
+                graph_get_shortest_path.es[edge]['peso'] = 0
+
+            else:
+                graph_get_shortest_path.es[edge]['peso'] = 2.5 * g.es[edge_g]['peso']
+
+        # si se baja de un servicio a un paradero y el paradero no es el destino se considera una penalizacion por trasbordo
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'servicio' and arc_destino != target and \
+                g.vs[arc_destino]["name2"] not in paradero_cercano_dic[g.vs[target]["name2"]]:
+
+            if g.vs[arc_origen]["name2"][:2] == 'M-' and g.vs[arc_destino]["name2"][:2] == 'M-':
+                graph_get_shortest_path.es[edge]['peso'] = g.es[edge_g]['peso'] + 20.5
+
+            else:
+                graph_get_shortest_path.es[edge]['peso'] = g.es[edge_g]['peso'] + 20.5
+
+    # Shortest path from the source to the target
+    A = [graph_get_shortest_path.get_shortest_paths(source, to=target, weights=weights, output="vpath")[0]]
+
+    A_costs = [path_cost(graph_get_shortest_path, A[0], weights)]
+
+    # Initialize the heap to store the potential kth shortest path
+    B = Queue.PriorityQueue()
+    lista_caminos_distintos = []
+    A_path_simple = []
+    A_path_resumido = []
+
+    # comparamos una lista de caminos resumidos puesto que diferentes trayectorias en metro no pueden ser reconocidas
+    for path in A:
+        path_simple = format_paths_k_shortest_path(g, path, dict_servicio_llave_codigoTS)[0]
+        path_resumido = format_paths_k_shortest_path(g, path, dict_servicio_llave_codigoTS)[1]
+        if path_resumido not in A_path_resumido:
+            A_path_resumido.append(path_resumido)
+            A_path_simple.append(path_simple)
+            lista_caminos_distintos.append(A_path_resumido)
+
+    for k in range(1, num_k):
+        # recorre todos los nodos de un camino
+        for i in range(len(A[k - 1]) - 1):
+            # Spur node is retrieved from the previous k-shortest path, k − 1
+            spurNode = A[k - 1][i]
+            # The sequence of nodes from the source to the spur node of the previous k-shortest path
+            rootPath = A[k - 1][:i]
+
+            # We store the removed edges
+            removed_edges = []
+
+            for path in A:
+                if len(path) - 1 > i and rootPath == path[:i]:
+                    # Remove the links that are part of the previous shortest paths which share the same root path
+                    edge = graph_get_shortest_path.es.select(_source=path[i], _target=path[i + 1])
+                    if len(edge) == 0:
+                        continue  # edge already deleted
+                    edge = edge[0]
+                    removed_edges.append((path[i], path[i + 1], edge.attributes()))
+                    edge.delete()
+
+            for n in range(len(rootPath) - 1):
+                if n != spurNode:
+                    for j in graph_get_shortest_path.neighborhood(n, order=1, mode=OUT)[1:]:
+                        edge = graph_get_shortest_path.es.select(_source=n, _target=j)
+                        if len(edge) == 0:
+                            continue  # edge already deleted
+                        edge = edge[0]
+                        removed_edges.append((n, j, edge.attributes()))
+                        edge.delete()
+
+                    if graph_get_shortest_path.is_directed():
+                        for j in graph_get_shortest_path.neighborhood(n, order=1, mode=IN)[1:]:
+                            edge = graph_get_shortest_path.es.select(_source=j, _target=n)
+                            if len(edge) == 0:
+                                continue  # edge already deleted
+                            edge = edge[0]
+                            removed_edges.append((j, n, edge.attributes()))
+                            edge.delete()
+
+            # Calculate the spur path from the spur node to the sink
+            spurPath = graph_get_shortest_path.get_shortest_paths(spurNode, to=target, weights=weights, output="vpath")[
+                0]
+
+            encontro_camino = True
+            if spurNode != target and len(spurPath) == 1:
+                encontro_camino = False
+
+            if target in spurPath and len(spurPath) > 0 and encontro_camino:
+                # Entire path is made up of the root path and spur path
+                totalPath = rootPath + spurPath
+                totalPathCost = path_cost(graph_get_shortest_path, totalPath, weights)
+                totalPathFormat = format_paths_k_shortest_path(g, totalPath, dict_servicio_llave_codigoTS)[0]
+                totalPathFormatResumido = format_paths_k_shortest_path(g, totalPath, dict_servicio_llave_codigoTS)[1]
+                nodes_totalPathFormat = totalPathFormat.split('/')
+
+                # revisamos el penultimo nodo para evitar caminos que terminen con 3 caminatas o más al final del viaje 'L-34-80-10-SN/F01-I/L-34-40-220-PO/L-34-40-225-OP/F01c-R/L-34-76-20-SN/L-34-44-6-PO'
+                if len(nodes_totalPathFormat) > 1:
+                    penultimo_nodo = nodes_totalPathFormat[-2]
+                    if penultimo_nodo in g.vs["name2"]:
+                        indice_penultimo_nodo = g.vs.find(name2=penultimo_nodo).index
+                        tipo_penultimo_nodo = g.vs["tipo"][indice_penultimo_nodo]
+
+                    else:
+                        tipo_penultimo_nodo = 'servicio'
+
+                    # revisamos el segundo nodo para evitar caminos que inicien con 3 caminatas o más al inicio del viaje
+                    segundo_nodo = nodes_totalPathFormat[1]
+                    if segundo_nodo in g.vs["name2"]:
+                        indice_segundo_nodo = g.vs.find(name2=segundo_nodo).index
+                        tipo_segundo_nodo = g.vs["tipo"][indice_segundo_nodo]
+
+                    else:
+                        tipo_segundo_nodo = 'servicio'
+
+                else:
+                    tipo_segundo_nodo = 'paradero'
+                    tipo_penultimo_nodo = 'paradero'
+
+                if totalPathFormatResumido not in lista_caminos_distintos and tipo_penultimo_nodo != 'paradero' and tipo_segundo_nodo != 'paradero':
+                    # totalPath_set = set(totalPath)
+                    # contains_duplicates = len(totalPath) != len(totalPath_set)
+                    lista_caminos_distintos.append(totalPathFormatResumido)
+                    B.put((totalPathCost, totalPath))
+
+            # Add back the edges that were removed from the graph
+            for removed_edge in removed_edges:
+                node_start, node_end, cost = removed_edge
+                graph_get_shortest_path.add_edge(node_start, node_end)
+                edge = graph_get_shortest_path.es.select(_source=node_start, _target=node_end)[0]
+                edge.update_attributes(cost)
+
+        # Sort the potential k-shortest paths by cost
+        # B is already sorted
+        # Add the lowest cost path becomes the k-shortest path.
+
+        if B.empty():
+            break
+
+        while True:
+            cost_, path_ = B.get()
+            path_simple = format_paths_k_shortest_path(g, path_, dict_servicio_llave_codigoTS)[0]
+            path_resumido = format_paths_k_shortest_path(g, path_, dict_servicio_llave_codigoTS)[1]
+            if path_resumido not in A_path_resumido:
+                # We found a new path to add
+                A_path_simple.append(path_simple)
+                A_path_resumido.append(path_resumido)
+                A.append(path_)
+                A_costs.append(cost_)
+                break
+
+    return A_path_simple, A_path_resumido, A_costs
+
+def link_elimination(g, source, target, num_k, weights, dict_servicio_llave_codigoTS, paradero_cercano_dic):
+    import Queue
 
     graph_get_shortest_path = g.copy()
     tipo_nodo_origen = graph_get_shortest_path.vs["tipo"][source]
@@ -374,12 +583,186 @@ def link_elimination(g, source, target, num_k, weights, dict_servicio_llave_codi
             edge = graph_get_shortest_path.get_eid(j, target, directed=True, error=True)
             graph_get_shortest_path.es[edge]["peso"] = 0
 
+    for arc in g.get_edgelist():
+        arc_origen = arc[0]
+        arc_destino = arc[1]
+        tipo_nodo_origen = g.vs["tipo"][arc_origen]
+        tipo_nodo_destino = g.vs["tipo"][arc_destino]
+
+        edge_g = g.get_eid(arc_origen, arc_destino, directed=True, error=True)
+
+        # si se baja de un servicio a un paradero y el paradero no es el destino se considera una penalizacion por trasbordo
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'servicio' and arc_destino != target and \
+                g.vs[arc_destino]["name2"] not in paradero_cercano_dic[g.vs[target]["name2"]]:
+
+            if g.vs[arc_origen]["name2"][:2] == 'M-' and g.vs[arc_destino]["name2"][:2] == 'M-':
+                graph_get_shortest_path.es[edge]['peso'] = g.es[edge_g]['peso'] + 1
+
+            else:
+                graph_get_shortest_path.es[edge]['peso'] = g.es[edge_g]['peso'] + 1
+
     #Shortest path from the source to the target
     A = [graph_get_shortest_path.get_shortest_paths(source, to=target, weights=weights, output="vpath")[0]]
     A_costs = [path_cost(graph_get_shortest_path, A[0], weights)]
 
     #inicializo la heap para luego encpntrar los caminos a los que se le removeran los arcos
-    B = queue.PriorityQueue()
+    B = Queue.PriorityQueue()
+    lista_caminos_distintos = []
+    servicios_usados = []
+    #recorro las rutas minimas encontradas y las agrego a la heap
+    for path in A:
+        path_format = format_paths_k_shortest_path(graph_get_shortest_path, path, dict_servicio_llave_codigoTS)[0]
+        if path not in lista_caminos_distintos:
+            lista_caminos_distintos.append(path_format)
+            totalPathCost = path_cost(graph_get_shortest_path, path, weights)
+            B.put((totalPathCost, path))
+
+    contador = 0
+    while (B.qsize() > 0 and contador < num_k):
+        cost, path = B.get()
+        contador += 1
+        #vamos a recorrer todos los nodos excepto el ultimo
+        for i in range(len(path)-1):
+            #arco desde el nodo i al siguiente nodo
+            edge = graph_get_shortest_path.es.select(_source=path[i], _target=path[i + 1])
+            edge.delete()
+            #calculamos el nuevo camino minimo
+            NewPath = [graph_get_shortest_path.get_shortest_paths(source, to=target, weights=weights, output="vpath")[0]]
+
+            #recorremos todos los caminos minimos
+            for totalPath in NewPath:
+                totalPathCost = path_cost(graph_get_shortest_path, totalPath, weights)
+                # Añadir el nuevo camino minimo
+                if totalPathCost > -1:
+                    totalPathFormat = format_paths_k_shortest_path(g, totalPath, dict_servicio_llave_codigoTS)[0]
+                    totalPathFormatResumido = format_paths_k_shortest_path(g, totalPath, dict_servicio_llave_codigoTS)[1]
+                    nodes_totalPathFormat = totalPathFormat.split('/')
+
+                    # revisamos el penultimo nodo para evitar caminos que terminen con 3 caminatas o más al final del viaje 'L-34-80-10-SN/F01-I/L-34-40-220-PO/L-34-40-225-OP/F01c-R/L-34-76-20-SN/L-34-44-6-PO'
+                    if len(nodes_totalPathFormat) > 1:
+                        penultimo_nodo = nodes_totalPathFormat[-2]
+                        if penultimo_nodo in g.vs["name2"]:
+                            indice_penultimo_nodo = g.vs.find(name2=penultimo_nodo).index
+                            tipo_penultimo_nodo = g.vs["tipo"][indice_penultimo_nodo]
+
+                        else:
+                            tipo_penultimo_nodo = 'servicio'
+
+                        # revisamos el segundo nodo para evitar caminos que inicien con 3 caminatas o más al inicio del viaje
+                        segundo_nodo = nodes_totalPathFormat[1]
+                        if segundo_nodo in g.vs["name2"]:
+                            indice_segundo_nodo = g.vs.find(name2=segundo_nodo).index
+                            tipo_segundo_nodo = g.vs["tipo"][indice_segundo_nodo]
+
+                        else:
+                            tipo_segundo_nodo = 'servicio'
+
+                    else:
+                        tipo_segundo_nodo = 'paradero'
+                        tipo_penultimo_nodo = 'paradero'
+
+                    if totalPathFormatResumido not in lista_caminos_distintos and tipo_penultimo_nodo != 'paradero' and tipo_segundo_nodo != 'paradero':
+                        # totalPath_set = set(totalPath)
+                        # contains_duplicates = len(totalPath) != len(totalPath_set)
+                        lista_caminos_distintos.append(totalPathFormatResumido)
+                        B.put((totalPathCost, totalPath))
+                        A.append(totalPath)
+                        A_costs.append(totalPathCost)
+
+                        if len(A) >= num_k:
+                            camino = []
+                            costo_camino = []
+                            camino_resumido = []
+                            contador = 0
+
+                            for path in A:
+                                path_simple = format_paths_k_shortest_path(g, path, dict_servicio_llave_codigoTS)[0]
+                                path_resumido = format_paths_k_shortest_path(g, path, dict_servicio_llave_codigoTS)[1]
+                                if path_simple not in camino:
+                                    camino.append(path_simple)
+                                    costo_camino.append(A_costs[contador])
+                                    camino_resumido.append(path_resumido)
+                                contador += 1
+
+                            return camino, camino_resumido, costo_camino
+
+    camino = []
+    costo_camino = []
+    camino_resumido = []
+    contador = 0
+
+    for path in A:
+        path_simple = format_paths_k_shortest_path(g, path, dict_servicio_llave_codigoTS)[0]
+        path_resumido = format_paths_k_shortest_path(g, path, dict_servicio_llave_codigoTS)[1]
+        if path_simple not in camino:
+            camino.append(path_simple)
+            costo_camino.append(A_costs[contador])
+            camino_resumido.append(path_resumido)
+        contador += 1
+
+    return camino, camino_resumido, costo_camino
+
+def link_elimination_observed_parameters(g, source, target, num_k, weights, dict_servicio_llave_codigoTS, paradero_cercano_dic):
+    import Queue
+
+    graph_get_shortest_path = g.copy()
+    tipo_nodo_origen = graph_get_shortest_path.vs["tipo"][source]
+    tipo_nodo_destino = graph_get_shortest_path.vs["tipo"][target]
+
+    #setiamos en peso igual a cero a todos los arcos de caminata que estan proximos al origen
+    #esto hara que los k caminos se busquen en el circulo de radio 100 mts
+    for j in graph_get_shortest_path.neighborhood(source, order=1, mode=OUT)[1:]:
+        tipo_nodo_vecino = graph_get_shortest_path.vs["tipo"][j]
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_vecino == 'paradero':
+            edge = graph_get_shortest_path.get_eid(source, j, directed=True, error=True)
+            #print(graph_get_shortest_path.es[edge].attributes())
+            graph_get_shortest_path.es[edge]['peso'] = 0
+
+    # setiamos en peso igual a cero a todos los arcos de caminata que estan proximos al destino
+    # esto hara que los k caminos se busquen en el circulo de radio 100 mts
+    for j in graph_get_shortest_path.neighborhood(target, order=1, mode=IN)[1:]:
+        tipo_nodo_vecino = graph_get_shortest_path.vs["tipo"][j]
+        if tipo_nodo_destino == 'paradero' and tipo_nodo_vecino == 'paradero':
+            edge = graph_get_shortest_path.get_eid(j, target, directed=True, error=True)
+            graph_get_shortest_path.es[edge]["peso"] = 0
+
+    for arc in g.get_edgelist():
+        arc_origen = arc[0]
+        arc_destino = arc[1]
+        tipo_nodo_origen = g.vs["tipo"][arc_origen]
+        tipo_nodo_destino = g.vs["tipo"][arc_destino]
+
+        edge_g = g.get_eid(arc_origen, arc_destino, directed=True, error=True)
+
+        edge = graph_get_shortest_path.get_eid(arc_origen, arc_destino, directed=True, error=True)
+        # si el arco es paradero->servicio se multiplica por 1.4 el tiempo de espera
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'servicio':
+            graph_get_shortest_path.es[edge]['peso'] = 1.4 * g.es[edge_g]['peso']
+
+        # si el arco es paradero->paradero se multiplica por 3 el tiempo de caminata y se asigna peso cero a caminaras alrededor de origen y destino
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'paradero':
+            if arc_origen == source or arc_destino == target:
+                graph_get_shortest_path.es[edge]['peso'] = 0
+
+            else:
+                graph_get_shortest_path.es[edge]['peso'] = 2.5 * g.es[edge_g]['peso']
+
+        # si se baja de un servicio a un paradero y el paradero no es el destino se considera una penalizacion por trasbordo
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'servicio' and arc_destino != target and \
+                g.vs[arc_destino]["name2"] not in paradero_cercano_dic[g.vs[target]["name2"]]:
+
+            if g.vs[arc_origen]["name2"][:2] == 'M-' and g.vs[arc_destino]["name2"][:2] == 'M-':
+                graph_get_shortest_path.es[edge]['peso'] = g.es[edge_g]['peso'] + 20.5
+
+            else:
+                graph_get_shortest_path.es[edge]['peso'] = g.es[edge_g]['peso'] + 20.5
+
+    #Shortest path from the source to the target
+    A = [graph_get_shortest_path.get_shortest_paths(source, to=target, weights=weights, output="vpath")[0]]
+    A_costs = [path_cost(graph_get_shortest_path, A[0], weights)]
+
+    #inicializo la heap para luego encpntrar los caminos a los que se le removeran los arcos
+    B = Queue.PriorityQueue()
     lista_caminos_distintos = []
     servicios_usados = []
     #recorro las rutas minimas encontradas y las agrego a la heap
@@ -510,6 +893,8 @@ def labeling_approach(g, source, target, weights, dict_servicio_llave_codigoTS, 
     graph_min_travel_time_1 = g.copy()
     graph_min_travel_time_2 = g.copy()
     graph_min_travel_time_3 = g.copy()
+    graph_min_travel_time_4 = g.copy()
+    graph_min_travel_time_5 = g.copy()
 
     lista_caminos_distintos = []
     A = []
@@ -551,7 +936,7 @@ def labeling_approach(g, source, target, weights, dict_servicio_llave_codigoTS, 
         else:
             graph_min_transfer.es[edge]['peso'] = 0
 
-        #4) Minimal walking transfer time
+        #4) Minimal walking transfer time (no lo uso en el papaer)
         ## Si nodo origen es tipo paradero y nodo destino es tipo paradero
         edge = graph_min_walking_transfer.get_eid(arc_origen, arc_destino, directed=True, error=True)
         # si el arco es igual a paradero->paradero y no es arco de caminata en el origen ni en el destino del parOD evaluado
@@ -563,15 +948,15 @@ def labeling_approach(g, source, target, weights, dict_servicio_llave_codigoTS, 
 
         #5) Minimal total travel time( in -vehicle + waiting time + walking transfer time)
         edge = graph_min_travel_time_1.get_eid(arc_origen, arc_destino, directed=True, error=True)
-        # si el arco es igual a paradero->paradero y no es arco de caminata en el origen ni en el destino del parOD evaluado
+        # si el arco es igual a paradero->paradero y es arco de caminata en el origen ni en el destino del parOD evaluado
         if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'paradero' and (arc_origen == source or arc_destino == target):
             graph_min_travel_time_1.es[edge]['peso'] = 0
 
-        #6) Minimal total travel time (in-vehicle + 2*waiting time + 3*walking transfer time)
+        #6) Minimal total travel time (in-vehicle + 1*waiting time + 1*walking transfer time)
         edge = graph_min_travel_time_2.get_eid(arc_origen, arc_destino, directed=True, error=True)
         #si el arco es paradero->servicio se multiplica por 2 el tiempo de espera
         if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'servicio':
-            graph_min_travel_time_2.es[edge]['peso'] = 2*g.es[edge_g]['peso']
+            graph_min_travel_time_2.es[edge]['peso'] = 1*g.es[edge_g]['peso']
 
         #si el arco es paradero->paradero se multiplica por 3 el tiepo de caminata y se asigna peso cero a caminaras alrededor de origen y destino
         if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'paradero':
@@ -579,18 +964,63 @@ def labeling_approach(g, source, target, weights, dict_servicio_llave_codigoTS, 
                 graph_min_travel_time_2.es[edge]['peso'] = 0
 
             else:
-                graph_min_travel_time_2.es[edge]['peso'] = 3 * g.es[edge_g]['peso']
+                graph_min_travel_time_2.es[edge]['peso'] = 1 * g.es[edge_g]['peso']
 
-        # 7) Minimal total travel time (in-vehicle + 2*waiting time + walking transfer time + 6*number of transfers between metro + 16*number of other transfers)
+        # 7) Minimal total travel time (in-vehicle + 5*waiting time + 3*walking transfer time)
         edge = graph_min_travel_time_3.get_eid(arc_origen, arc_destino, directed=True, error=True)
         # si el arco es paradero->servicio se multiplica por 2 el tiempo de espera
         if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'servicio':
-            graph_min_travel_time_3.es[edge]['peso'] = 2 * g.es[edge_g]['peso']
+            graph_min_travel_time_3.es[edge]['peso'] = 5 * g.es[edge_g]['peso']
 
         # si el arco es paradero->paradero se multiplica por 3 el tiepo de caminata y se asigna peso cero a caminaras alrededor de origen y destino
         if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'paradero':
             if arc_origen == source or arc_destino == target:
                 graph_min_travel_time_3.es[edge]['peso'] = 0
+
+            else:
+                graph_min_travel_time_3.es[edge]['peso'] = 3 * g.es[edge_g]['peso']
+
+        # 8) Minimal total travel time (in-vehicle + 5*waiting time + 5*walking transfer time)
+        edge = graph_min_travel_time_4.get_eid(arc_origen, arc_destino, directed=True, error=True)
+        # si el arco es paradero->servicio se multiplica por 2 el tiempo de espera
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'servicio':
+            graph_min_travel_time_4.es[edge]['peso'] = 5 * g.es[edge_g]['peso']
+
+        # si el arco es paradero->paradero se multiplica por 3 el tiepo de caminata y se asigna peso cero a caminaras alrededor de origen y destino
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'paradero':
+            if arc_origen == source or arc_destino == target:
+                graph_min_travel_time_4.es[edge]['peso'] = 0
+
+            else:
+                graph_min_travel_time_4.es[edge]['peso'] = 5 * g.es[edge_g]['peso']
+
+        # 9) Minimal total travel time (in-vehicle + 5*waiting time + 8*walking transfer time)
+        edge = graph_min_travel_time_5.get_eid(arc_origen, arc_destino, directed=True, error=True)
+        # si el arco es paradero->servicio se multiplica por 2 el tiempo de espera
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'servicio':
+            graph_min_travel_time_5.es[edge]['peso'] = 5 * g.es[edge_g]['peso']
+
+        # si el arco es paradero->paradero se multiplica por 3 el tiepo de caminata y se asigna peso cero a caminaras alrededor de origen y destino
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'paradero':
+            if arc_origen == source or arc_destino == target:
+                graph_min_travel_time_5.es[edge]['peso'] = 0
+
+            else:
+                graph_min_travel_time_5.es[edge]['peso'] = 8 * g.es[edge_g]['peso']
+        '''
+        # 7) Minimal total travel time (in-vehicle + 2*waiting time + walking transfer time + 6*number of transfers between metro + 16*number of other transfers)
+        edge = graph_min_travel_time_3.get_eid(arc_origen, arc_destino, directed=True, error=True)
+        # si el arco es paradero->servicio se multiplica por 1.6 el tiempo de espera
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'servicio':
+            graph_min_travel_time_3.es[edge]['peso'] = 1.6 * g.es[edge_g]['peso']
+
+        # si el arco es paradero->paradero se multiplica por 3 el tiempo de caminata y se asigna peso cero a caminaras alrededor de origen y destino
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'paradero':
+            if arc_origen == source or arc_destino == target:
+                graph_min_travel_time_3.es[edge]['peso'] = 0
+
+            else:
+                graph_min_travel_time_3.es[edge]['peso'] = 3 * g.es[edge_g]['peso']
 
         # si se baja de un servicio a un paradero y el paradero no es el destino se considera una penalizacion por trasbordo
         if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'servicio' and arc_destino != target and g.vs[arc_destino]["name2"] not in paradero_cercano_dic[g.vs[target]["name2"]]:
@@ -600,7 +1030,7 @@ def labeling_approach(g, source, target, weights, dict_servicio_llave_codigoTS, 
 
             else:
                 graph_min_travel_time_3.es[edge]['peso'] = g.es[edge_g]['peso'] + transfer_other_penalty
-
+        '''
     # camino minimo min_tt_in_vehicle
     NewPath_1 = [graph_min_tt_in_vehicle.get_shortest_paths(source, to=target, weights=weights, output="vpath")[0]]
 
@@ -622,8 +1052,14 @@ def labeling_approach(g, source, target, weights, dict_servicio_llave_codigoTS, 
     # camino minimo min_travel_time_3
     NewPath_7 = [graph_min_travel_time_3.get_shortest_paths(source, to=target, weights=weights, output="vpath")[0]]
 
+    # camino minimo min_travel_time_4
+    NewPath_8 = [graph_min_travel_time_4.get_shortest_paths(source, to=target, weights=weights, output="vpath")[0]]
+
+    # camino minimo min_travel_time_5
+    NewPath_9 = [graph_min_travel_time_5.get_shortest_paths(source, to=target, weights=weights, output="vpath")[0]]
+
     # junto todas las rutas minimas encontradas
-    NewPath = NewPath_1 + NewPath_2 + NewPath_3 + NewPath_4 + NewPath_5 + NewPath_6 + NewPath_7
+    NewPath = NewPath_1 + NewPath_2 + NewPath_3 + NewPath_4 + NewPath_5 + NewPath_6 + NewPath_7 + NewPath_8 + NewPath_9
 
     for totalPath in NewPath:
         totalPathCost = path_cost(graph_min_tt_in_vehicle, totalPath, weights)
@@ -653,8 +1089,82 @@ def labeling_approach(g, source, target, weights, dict_servicio_llave_codigoTS, 
 
     return camino, camino_resumido, costo_camino
 
+#este es el labeling approach con los parametro provenientes del modelo de tarjetas inteligentes
+def labeling_approach_observed_parameters(g, source, target, weights, dict_servicio_llave_codigoTS, paradero_cercano_dic):
+    graph_min_tt_in_vehicle = g.copy()
+    graph_min_travel_time_3 = g.copy()
 
-def link_penalty(g, source, target, weights, dict_servicio_llave_codigoTS):
+    lista_caminos_distintos = []
+    A = []
+    A_costs = []
+
+    for arc in g.get_edgelist():
+        arc_origen = arc[0]
+        arc_destino = arc[1]
+        tipo_nodo_origen = g.vs["tipo"][arc_origen]
+        tipo_nodo_destino = g.vs["tipo"][arc_destino]
+
+
+        edge_g = g.get_eid(arc_origen, arc_destino, directed=True, error=True)
+
+        # 7) Minimal total travel time (in-vehicle + 1.4*waiting time + 2.5*walking transfer time + 20.5*number of transfers)
+        edge = graph_min_travel_time_3.get_eid(arc_origen, arc_destino, directed=True, error=True)
+        # si el arco es paradero->servicio se multiplica por 1.6 el tiempo de espera
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'servicio':
+            graph_min_travel_time_3.es[edge]['peso'] = 1.4 * g.es[edge_g]['peso']
+
+        # si el arco es paradero->paradero se multiplica por 3 el tiempo de caminata y se asigna peso cero a caminaras alrededor de origen y destino
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'paradero':
+            if arc_origen == source or arc_destino == target:
+                graph_min_travel_time_3.es[edge]['peso'] = 0
+
+            else:
+                graph_min_travel_time_3.es[edge]['peso'] = 2.5 * g.es[edge_g]['peso']
+
+        # si se baja de un servicio a un paradero y el paradero no es el destino se considera una penalizacion por trasbordo
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'servicio' and arc_destino != target and g.vs[arc_destino]["name2"] not in paradero_cercano_dic[g.vs[target]["name2"]]:
+
+            if g.vs[arc_origen]["name2"][:2] == 'M-' and g.vs[arc_destino]["name2"][:2] == 'M-':
+                graph_min_travel_time_3.es[edge]['peso'] = g.es[edge_g]['peso'] + 20.5
+
+            else:
+                graph_min_travel_time_3.es[edge]['peso'] = g.es[edge_g]['peso'] + 20.5
+
+    # camino minimo min_travel_time_3
+    NewPath_7 = [graph_min_travel_time_3.get_shortest_paths(source, to=target, weights=weights, output="vpath")[0]]
+
+    # junto todas las rutas minimas encontradas
+    NewPath = NewPath_7
+
+    for totalPath in NewPath:
+        totalPathCost = path_cost(graph_min_tt_in_vehicle, totalPath, weights)
+        # Añadir el nuevo camino minimo
+        if totalPathCost > -1:
+            totalPathFormat = format_paths_k_shortest_path(g, totalPath, dict_servicio_llave_codigoTS)[0]
+            totalPathFormatResumido = format_paths_k_shortest_path(g, totalPath, dict_servicio_llave_codigoTS)[1]
+            tipo_segundo_nodo, tipo_penultimo_nodo = tipo_segundo_penultimo_nodo(g, totalPathFormat)
+            if totalPathFormatResumido not in lista_caminos_distintos and tipo_penultimo_nodo != 'paradero' and tipo_segundo_nodo != 'paradero':
+                lista_caminos_distintos.append(totalPathFormatResumido)
+                A.append(totalPath)
+                A_costs.append(totalPathCost)
+
+    camino = []
+    costo_camino = []
+    camino_resumido = []
+    contador = 0
+
+    for path in A:
+        path_simple = format_paths_k_shortest_path(g, path, dict_servicio_llave_codigoTS)[0]
+        path_resumido = format_paths_k_shortest_path(g, path, dict_servicio_llave_codigoTS)[1]
+        if path_simple not in camino:
+            camino.append(path_simple)
+            costo_camino.append(A_costs[contador])
+            camino_resumido.append(path_resumido)
+        contador += 1
+
+    return camino, camino_resumido, costo_camino
+
+def link_penalty(g, source, target, num_k, weights, dict_servicio_llave_codigoTS, paradero_cercano_dic):
 
     graph_get_shortest_path = g.copy()
     tipo_nodo_origen = graph_get_shortest_path.vs["tipo"][source]
@@ -677,11 +1187,29 @@ def link_penalty(g, source, target, weights, dict_servicio_llave_codigoTS):
             edge = graph_get_shortest_path.get_eid(j, target, directed=True, error=True)
             graph_get_shortest_path.es[edge]["peso"] = 0
 
+    for arc in g.get_edgelist():
+        arc_origen = arc[0]
+        arc_destino = arc[1]
+        tipo_nodo_origen = g.vs["tipo"][arc_origen]
+        tipo_nodo_destino = g.vs["tipo"][arc_destino]
+
+        edge_g = g.get_eid(arc_origen, arc_destino, directed=True, error=True)
+
+        # si se baja de un servicio a un paradero y el paradero no es el destino se considera una penalizacion por trasbordo
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'servicio' and arc_destino != target and \
+                g.vs[arc_destino]["name2"] not in paradero_cercano_dic[g.vs[target]["name2"]]:
+
+            if g.vs[arc_origen]["name2"][:2] == 'M-' and g.vs[arc_destino]["name2"][:2] == 'M-':
+                graph_get_shortest_path.es[edge]['peso'] = g.es[edge_g]['peso'] + 1
+
+            else:
+                graph_get_shortest_path.es[edge]['peso'] = g.es[edge_g]['peso'] + 1
+
     A_costs = []
     A = []
     lista_caminos_distintos = []
     iteracion = 0
-    while (iteracion<30):
+    while (iteracion<num_k):
 
         iteracion += 1
         NewPath = [graph_get_shortest_path.get_shortest_paths(source, to=target, weights=weights, output="vpath")[0]]
@@ -722,8 +1250,102 @@ def link_penalty(g, source, target, weights, dict_servicio_llave_codigoTS):
 
     return camino, camino_resumido, costo_camino
 
+def link_penalty_observed_parameters(g, source, target, num_k, weights, dict_servicio_llave_codigoTS, paradero_cercano_dic):
 
-def simulation(g, source, target, weights, dict_servicio_llave_codigoTS):
+    graph_get_shortest_path = g.copy()
+    tipo_nodo_origen = graph_get_shortest_path.vs["tipo"][source]
+    tipo_nodo_destino = graph_get_shortest_path.vs["tipo"][target]
+
+    #setiamos en peso igual a cero a todos los arcos de caminata que estan proximos al origen
+    #esto hara que los k caminos se busquen en el circulo de radio 100 mts
+    for j in graph_get_shortest_path.neighborhood(source, order=1, mode=OUT)[1:]:
+        tipo_nodo_vecino = graph_get_shortest_path.vs["tipo"][j]
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_vecino == 'paradero':
+            edge = graph_get_shortest_path.get_eid(source, j, directed=True, error=True)
+            #print(graph_get_shortest_path.es[edge].attributes())
+            graph_get_shortest_path.es[edge]['peso'] = 0
+
+    # setiamos en peso igual a cero a todos los arcos de caminata que estan proximos al destino
+    # esto hara que los k caminos se busquen en el circulo de radio 100 mts
+    for j in graph_get_shortest_path.neighborhood(target, order=1, mode=IN)[1:]:
+        tipo_nodo_vecino = graph_get_shortest_path.vs["tipo"][j]
+        if tipo_nodo_destino == 'paradero' and tipo_nodo_vecino == 'paradero':
+            edge = graph_get_shortest_path.get_eid(j, target, directed=True, error=True)
+            graph_get_shortest_path.es[edge]["peso"] = 0
+
+    for arc in g.get_edgelist():
+        arc_origen = arc[0]
+        arc_destino = arc[1]
+        tipo_nodo_origen = g.vs["tipo"][arc_origen]
+        tipo_nodo_destino = g.vs["tipo"][arc_destino]
+
+        edge_g = g.get_eid(arc_origen, arc_destino, directed=True, error=True)
+
+        edge = graph_get_shortest_path.get_eid(arc_origen, arc_destino, directed=True, error=True)
+        # si el arco es paradero->servicio se multiplica por 1.4 el tiempo de espera
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'servicio':
+            graph_get_shortest_path.es[edge]['peso'] = 1.4 * g.es[edge_g]['peso']
+
+        # si el arco es paradero->paradero se multiplica por 3 el tiempo de caminata y se asigna peso cero a caminaras alrededor de origen y destino
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'paradero':
+            if arc_origen == source or arc_destino == target:
+                graph_get_shortest_path.es[edge]['peso'] = 0
+
+            else:
+                graph_get_shortest_path.es[edge]['peso'] = 2.5 * g.es[edge_g]['peso']
+
+        # si se baja de un servicio a un paradero y el paradero no es el destino se considera una penalizacion por trasbordo
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'servicio' and arc_destino != target and \
+                g.vs[arc_destino]["name2"] not in paradero_cercano_dic[g.vs[target]["name2"]]:
+
+            graph_get_shortest_path.es[edge]['peso'] = g.es[edge_g]['peso'] + 20.5
+
+    A_costs = []
+    A = []
+    lista_caminos_distintos = []
+    iteracion = 0
+    while (iteracion<num_k):
+
+        iteracion += 1
+        NewPath = [graph_get_shortest_path.get_shortest_paths(source, to=target, weights=weights, output="vpath")[0]]
+
+        #recorro las rutas minimas encontradas y las agrego a la heap
+        for totalPath in NewPath:
+            totalPathCost = path_cost(graph_get_shortest_path, totalPath, weights)
+            # Añadir el nuevo camino minimo
+            if totalPathCost > -1:
+                totalPathFormat = format_paths_k_shortest_path(g, totalPath, dict_servicio_llave_codigoTS)[0]
+                totalPathFormatResumido = format_paths_k_shortest_path(g, totalPath, dict_servicio_llave_codigoTS)[1]
+                tipo_segundo_nodo, tipo_penultimo_nodo = tipo_segundo_penultimo_nodo(g, totalPathFormat)
+                if totalPathFormatResumido not in lista_caminos_distintos and tipo_penultimo_nodo != 'paradero' and tipo_segundo_nodo != 'paradero':
+                    lista_caminos_distintos.append(totalPathFormatResumido)
+                    A.append(totalPath)
+                    A_costs.append(totalPathCost)
+
+            #vamos a recorrer todos los nodos excepto el ultimo
+            for i in range(len(totalPath)-1):
+            #arco desde el nodo i al siguiente nodo
+                edge = graph_get_shortest_path.get_eid(totalPath[i], totalPath[i + 1], directed=True, error=True)
+                # print(graph_get_shortest_path.es[edge].attributes())
+                nuevo_costo = graph_get_shortest_path.es[edge]['peso']*1.2
+                graph_get_shortest_path.es[edge]['peso'] = nuevo_costo
+    camino = []
+    costo_camino = []
+    camino_resumido = []
+    contador = 0
+
+    for path in A:
+        path_simple = format_paths_k_shortest_path(g, path, dict_servicio_llave_codigoTS)[0]
+        path_resumido = format_paths_k_shortest_path(g, path, dict_servicio_llave_codigoTS)[1]
+        if path_simple not in camino:
+            camino.append(path_simple)
+            costo_camino.append(A_costs[contador])
+            camino_resumido.append(path_resumido)
+        contador += 1
+
+    return camino, camino_resumido, costo_camino
+
+def simulation(g, source, target, num_k, weights, dict_servicio_llave_codigoTS, paradero_cercano_dic):
 
     import numpy as np
 
@@ -748,12 +1370,26 @@ def simulation(g, source, target, weights, dict_servicio_llave_codigoTS):
             edge = graph_get_shortest_path.get_eid(j, target, directed=True, error=True)
             graph_get_shortest_path.es[edge]["peso"] = 0
 
+    for arc in g.get_edgelist():
+        arc_origen = arc[0]
+        arc_destino = arc[1]
+        tipo_nodo_origen = g.vs["tipo"][arc_origen]
+        tipo_nodo_destino = g.vs["tipo"][arc_destino]
+
+        edge_g = g.get_eid(arc_origen, arc_destino, directed=True, error=True)
+
+        # si se baja de un servicio a un paradero y el paradero no es el destino se considera una penalizacion por trasbordo
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'servicio' and arc_destino != target and \
+                g.vs[arc_destino]["name2"] not in paradero_cercano_dic[g.vs[target]["name2"]]:
+
+            graph_get_shortest_path.es[edge]['peso'] = g.es[edge_g]['peso'] + 1
+
     A_costs = []
     A = []
     lista_caminos_distintos = []
 
     iteracion = 0
-    while (iteracion < 30):
+    while (iteracion < num_k):
         iteracion += 1
 
         for arc in graph_get_shortest_path.get_edgelist():
@@ -774,6 +1410,108 @@ def simulation(g, source, target, weights, dict_servicio_llave_codigoTS):
                 if totalPathCost > -1:
                     totalPathFormat = format_paths_k_shortest_path(g, totalPath, dict_servicio_llave_codigoTS)[0]
                     totalPathFormatResumido = format_paths_k_shortest_path(g, totalPath, dict_servicio_llave_codigoTS)[1]
+                    tipo_segundo_nodo, tipo_penultimo_nodo = tipo_segundo_penultimo_nodo(g, totalPathFormat)
+                    if totalPathFormatResumido not in lista_caminos_distintos and tipo_penultimo_nodo != 'paradero' and tipo_segundo_nodo != 'paradero':
+                        lista_caminos_distintos.append(totalPathFormatResumido)
+                        A.append(totalPath)
+                        A_costs.append(totalPathCost)
+
+            camino = []
+            costo_camino = []
+            camino_resumido = []
+            contador = 0
+
+            for path in A:
+                path_simple = format_paths_k_shortest_path(g, path, dict_servicio_llave_codigoTS)[0]
+                path_resumido = format_paths_k_shortest_path(g, path, dict_servicio_llave_codigoTS)[1]
+                if path_simple not in camino:
+                    camino.append(path_simple)
+                    costo_camino.append(A_costs[contador])
+                    camino_resumido.append(path_resumido)
+                contador += 1
+
+    return camino, camino_resumido, costo_camino
+
+
+def simulation_observed_parameters(g, source, target, num_k, weights, dict_servicio_llave_codigoTS, paradero_cercano_dic):
+    import numpy as np
+
+    graph_get_shortest_path = g.copy()
+    tipo_nodo_origen = graph_get_shortest_path.vs["tipo"][source]
+    tipo_nodo_destino = graph_get_shortest_path.vs["tipo"][target]
+
+    # setiamos en peso igual a cero a todos los arcos de caminata que estan proximos al origen
+    # esto hara que los k caminos se busquen en el circulo de radio 100 mts
+    for j in graph_get_shortest_path.neighborhood(source, order=1, mode=OUT)[1:]:
+        tipo_nodo_vecino = graph_get_shortest_path.vs["tipo"][j]
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_vecino == 'paradero':
+            edge = graph_get_shortest_path.get_eid(source, j, directed=True, error=True)
+            # print(graph_get_shortest_path.es[edge].attributes())
+            graph_get_shortest_path.es[edge]['peso'] = 0
+
+    # setiamos en peso igual a cero a todos los arcos de caminata que estan proximos al destino
+    # esto hara que los k caminos se busquen en el circulo de radio 100 mts
+    for j in graph_get_shortest_path.neighborhood(target, order=1, mode=IN)[1:]:
+        tipo_nodo_vecino = graph_get_shortest_path.vs["tipo"][j]
+        if tipo_nodo_destino == 'paradero' and tipo_nodo_vecino == 'paradero':
+            edge = graph_get_shortest_path.get_eid(j, target, directed=True, error=True)
+            graph_get_shortest_path.es[edge]["peso"] = 0
+
+    for arc in g.get_edgelist():
+        arc_origen = arc[0]
+        arc_destino = arc[1]
+        tipo_nodo_origen = g.vs["tipo"][arc_origen]
+        tipo_nodo_destino = g.vs["tipo"][arc_destino]
+
+        edge_g = g.get_eid(arc_origen, arc_destino, directed=True, error=True)
+
+        edge = graph_get_shortest_path.get_eid(arc_origen, arc_destino, directed=True, error=True)
+        # si el arco es paradero->servicio se multiplica por 1.4 el tiempo de espera
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'servicio':
+            graph_get_shortest_path.es[edge]['peso'] = 1.4 * g.es[edge_g]['peso']
+
+        # si el arco es paradero->paradero se multiplica por 3 el tiempo de caminata y se asigna peso cero a caminaras alrededor de origen y destino
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'paradero':
+            if arc_origen == source or arc_destino == target:
+                graph_get_shortest_path.es[edge]['peso'] = 0
+
+            else:
+                graph_get_shortest_path.es[edge]['peso'] = 2.5 * g.es[edge_g]['peso']
+
+        # si se baja de un servicio a un paradero y el paradero no es el destino se considera una penalizacion por trasbordo
+        if tipo_nodo_origen == 'paradero' and tipo_nodo_destino == 'servicio' and arc_destino != target and \
+                g.vs[arc_destino]["name2"] not in paradero_cercano_dic[g.vs[target]["name2"]]:
+            graph_get_shortest_path.es[edge]['peso'] = g.es[edge_g]['peso'] + 20.5
+
+    A_costs = []
+    A = []
+    lista_caminos_distintos = []
+
+    iteracion = 0
+    while (iteracion < num_k):
+        iteracion += 1
+
+        for arc in graph_get_shortest_path.get_edgelist():
+            arc_origen = arc[0]
+            arc_destino = arc[1]
+
+            edge_g = graph_get_shortest_path.get_eid(arc_origen, arc_destino, directed=True, error=True)
+
+            nuevo_costo = abs(graph_get_shortest_path.es[edge_g]['peso'] + 2 * graph_get_shortest_path.es[edge_g][
+                'peso'] * np.random.standard_normal())
+            graph_get_shortest_path.es[edge_g]['peso'] = nuevo_costo
+
+            NewPath = [
+                graph_get_shortest_path.get_shortest_paths(source, to=target, weights=weights, output="vpath")[0]]
+
+            # recorro las rutas minimas encontradas y las agrego a la heap
+            for totalPath in NewPath:
+                totalPathCost = path_cost(graph_get_shortest_path, totalPath, weights)
+                # Añadir el nuevo camino minimo
+                if totalPathCost > -1:
+                    totalPathFormat = format_paths_k_shortest_path(g, totalPath, dict_servicio_llave_codigoTS)[0]
+                    totalPathFormatResumido = format_paths_k_shortest_path(g, totalPath, dict_servicio_llave_codigoTS)[
+                        1]
                     tipo_segundo_nodo, tipo_penultimo_nodo = tipo_segundo_penultimo_nodo(g, totalPathFormat)
                     if totalPathFormatResumido not in lista_caminos_distintos and tipo_penultimo_nodo != 'paradero' and tipo_segundo_nodo != 'paradero':
                         lista_caminos_distintos.append(totalPathFormatResumido)

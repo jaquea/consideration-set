@@ -1,35 +1,19 @@
 # coding=utf-8
 # se debe ejecutar despues de proces_viajes.py
 # se genera el archivo viajes procesados que permite entregar los viajes por par OD en base al radio de 100 mts por cada par de paraderos OD
-import utm
-import dill
-import pandas as pd #this is how I usually import pandas
-from collections import defaultdict
 import csv
 import os
 import pickle
 import time
-
-from k_shortest_paths import yen_igraph, link_elimination, link_penalty, labeling_approach, simulation
-from random import seed
+from collections import defaultdict
 from random import randint
+from random import seed
+
+import dill
+import pandas as pd  # this is how I usually import pandas
+import utm
+
 from constants import PROJECT_DIR
-
-dump_file2 = open('tmp\\viajes.pkl', 'rb')
-viajes = dill.load(dump_file2)
-dump_file2.close()
-
-dump_file2 = open('tmp\\viajes_reales.pkl', 'rb')
-viajes_reales = dill.load(dump_file2)
-dump_file2.close()
-
-dump_file1 = open('tmp\\viajes_alternativas_desglosadas.pkl', 'rb')
-viajes_alternativas_desaglosadas = dill.load(dump_file1)
-dump_file1.close()
-
-dump_file1 = open('tmp\\viajes_alternativas.pkl', 'rb')
-viajes_alternativas = dill.load(dump_file1)
-dump_file1.close()
 
 dump_file1 = open(os.path.join(PROJECT_DIR,'tmp','grafo.igraph'), 'rb')
 g = pickle.load(dump_file1)
@@ -38,6 +22,84 @@ dump_file1.close()
 dump_file1 = open(os.path.join(PROJECT_DIR, 'tmp', 'dict_servicio_llave_codigoTS.pkl'), 'rb')
 dict_servicio_llave_codigoTS = pickle.load(dump_file1)
 dump_file1.close()
+
+'''
+#estimacion con 1 semana (semana 3)
+
+dump_file2 = open('tmp\\viajes_reales_1semana.pkl', 'rb')
+viajes = dill.load(dump_file2)
+dump_file2.close()
+
+dump_file2 = open('tmp\\viajes_reales_1semana.pkl', 'rb')
+viajes_reales = dill.load(dump_file2)
+dump_file2.close()
+
+dump_file1 = open('tmp\\viajes_alternativas_desglosadas_1semana.pkl', 'rb')
+viajes_alternativas_desaglosadas = dill.load(dump_file1)
+dump_file1.close()
+
+dump_file1 = open('tmp\\viajes_alternativas_1semana.pkl', 'rb')
+viajes_alternativas = dill.load(dump_file1)
+dump_file1.close()
+
+'''
+'''
+#estimacion con 2 semanas (semana 3 y semana 2)
+
+dump_file2 = open('tmp\\viajes_reales_2semanas.pkl', 'rb')
+viajes = dill.load(dump_file2)
+dump_file2.close()
+
+dump_file2 = open('tmp\\viajes_reales_2semanas.pkl', 'rb')
+viajes_reales = dill.load(dump_file2)
+dump_file2.close()
+
+dump_file1 = open('tmp\\viajes_alternativas_desglosadas_2semanas.pkl', 'rb')
+viajes_alternativas_desaglosadas = dill.load(dump_file1)
+dump_file1.close()
+
+dump_file1 = open('tmp\\viajes_alternativas_2semanas.pkl', 'rb')
+viajes_alternativas = dill.load(dump_file1)
+dump_file1.close()
+'''
+
+#estimacion con 3 semanas (semana 3, semana 2 y semana 1)
+
+dump_file2 = open('tmp\\viajes_reales_3semanas.pkl', 'rb')
+viajes = dill.load(dump_file2)
+dump_file2.close()
+
+dump_file2 = open('tmp\\viajes_reales_3semanas.pkl', 'rb')
+viajes_reales = dill.load(dump_file2)
+dump_file2.close()
+
+dump_file1 = open('tmp\\viajes_alternativas_desglosadas_3semanas.pkl', 'rb')
+viajes_alternativas_desaglosadas = dill.load(dump_file1)
+dump_file1.close()
+
+dump_file1 = open('tmp\\viajes_alternativas_3semanas.pkl', 'rb')
+viajes_alternativas = dill.load(dump_file1)
+dump_file1.close()
+
+
+#estimacion con semana 4 para prediccion
+'''
+dump_file2 = open('tmp\\viajes_prediccion_mismos_pares_OD_reales.pkl', 'rb')
+viajes = dill.load(dump_file2)
+dump_file2.close()
+
+dump_file2 = open('tmp\\viajes_prediccion_mismos_pares_OD_reales.pkl', 'rb')
+viajes_reales = dill.load(dump_file2)
+dump_file2.close()
+
+dump_file1 = open('tmp\\viajes_prediccion_mismos_pares_OD_alternativas_desagregadas.pkl', 'rb')
+viajes_alternativas_desaglosadas = dill.load(dump_file1)
+dump_file1.close()
+
+dump_file1 = open('tmp\\viajes_prediccion_mismos_pares_OD_alternativas.pkl', 'rb')
+viajes_alternativas = dill.load(dump_file1)
+dump_file1.close()
+'''
 
 #viajes_p = defaultdict(lambda:defaultdict(lambda:defaultdict(lambda:0)))
 
@@ -50,46 +112,11 @@ dump_file1.close()
 
 #viajes=viajes_p
 
-print(len(viajes))
 
-lista_de_viajes= []
+dump_file1 = open(os.path.join(PROJECT_DIR,'tmp','lista_de_pares_od.pkl'), 'rb')
+lista_de_viajes = pickle.load(dump_file1)
+dump_file1.close()
 
-
-
-for origen in viajes:
-    for destino in viajes[origen]:
-        n = sum([viajes[origen][destino][camino] for camino in viajes[origen][destino]])
-        dic_viaje = dict(origen=origen, destino=destino, n=n)
-        lista_de_viajes.append(dic_viaje)
-
-lista_de_viajes.sort(key=lambda x: x['n'], reverse=True)
-
-cont = 0
-for elemento in lista_de_viajes:
-
-    origen = elemento['origen']
-    destino = elemento['destino']
-    n = elemento['n']
-    if n>=30:
-        cont += 1
-
-print(cont)
-answer = set()
-sampleSize = 300
-answerSize = 0
-lista = []
-
-seed(300)
-
-while answerSize < sampleSize:
-    r = randint(0,cont)
-    if r not in answer:
-        answerSize += 1
-        answer.add(r)
-        parOD = lista_de_viajes[r]
-        lista.append(parOD)
-
-lista_de_viajes = lista
 print(len(lista_de_viajes))
 ###diccionarios de localizacion geografica paraderos y estaciones de metro
 df_paraderos = pd.read_csv('inputs\ConsolidadoParadas.csv')

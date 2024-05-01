@@ -1,5 +1,4 @@
 import pickle
-
 import csv
 
 import dill
@@ -38,6 +37,7 @@ dump_file1 = open('tmp\\grafo.igraph', 'rb')
 g = pickle.load(dump_file1)
 dump_file1.close()
 
+
 dump_file1 = open('tmp\\grafo_metro.igraph', 'rb')
 g_metro = pickle.load(dump_file1)
 dump_file1.close()
@@ -50,12 +50,30 @@ dump_file1 = open('tmp\\dict_servicio_llave_usuario.pkl', 'rb')
 dict_servicio_llave_usuario = dill.load(dump_file1)
 dump_file1.close()
 
+# Aca estan los conjuntos de consideracion de los viajes observados con la cantidad desemanas establecidas en el archivo
+#proces_viajes2.py. Corresponden a datos observados en el 80% de los pares OD
 dump_file1 = open('tmp\\viajes_alternativas_desaglosadas_procesados.pkl', 'rb')
 viajes_alternativas_desaglosadas_procesados = dill.load(dump_file1)
 dump_file1.close()
 
 dump_file1 = open('tmp\\viajes_alternativas_procesados.pkl', 'rb')
 viajes_alternativas_procesados = dill.load(dump_file1)
+dump_file1.close()
+
+dump_file1 = open('tmp\\viajes_simulation_shortest_alternativas_desaglosadas_procesados.pkl', 'rb')
+viajes_simulation_shortest_alternativas_desaglosadas_procesados = dill.load(dump_file1)
+dump_file1.close()
+
+dump_file1 = open('tmp\\viajes_simulation_shortest_alternativas_procesados.pkl', 'rb')
+viajes_simulation_shortest_alternativas_procesados = dill.load(dump_file1)
+dump_file1.close()
+
+dump_file1 = open('tmp\\viajes_simulation_shortest_alternativas_desaglosadas_procesados_observed_parameters.pkl', 'rb')
+viajes_simulation_shortest_alternativas_desaglosadas_procesados_observed_parameters = dill.load(dump_file1)
+dump_file1.close()
+
+dump_file1 = open('tmp\\viajes_simulation_shortest_alternativas_procesados_observed_parameters.pkl', 'rb')
+viajes_simulation_shortest_alternativas_procesados_observed_parameters = dill.load(dump_file1)
 dump_file1.close()
 
 dump_file1 = open('tmp\\viajes_k_shortest_alternativas_desaglosadas_procesados.pkl', 'rb')
@@ -66,12 +84,28 @@ dump_file1 = open('tmp\\viajes_k_shortest_alternativas_procesados.pkl', 'rb')
 viajes_k_shortest_alternativas_procesados = dill.load(dump_file1)
 dump_file1.close()
 
+dump_file1 = open('tmp\\viajes_k_shortest_alternativas_desaglosadas_procesados_observed_parameters.pkl', 'rb')
+viajes_k_shortest_alternativas_desaglosadas_procesados_observed_parameters = dill.load(dump_file1)
+dump_file1.close()
+
+dump_file1 = open('tmp\\viajes_k_shortest_alternativas_procesados_observed_parameters.pkl', 'rb')
+viajes_k_shortest_alternativas_procesados_observed_parameters = dill.load(dump_file1)
+dump_file1.close()
+
 dump_file2 = open('tmp\\viajes_link_penalty_shortest_alternativas_desaglosadas_procesados.pkl', 'rb')
 viajes_link_penalty_shortest_alternativas_desaglosadas_procesados = dill.load(dump_file2)
 dump_file2.close()
 
 dump_file2 = open('tmp\\viajes_link_penalty_shortest_alternativas_procesados.pkl', 'rb')
 viajes_link_penalty_shortest_alternativas_procesados = dill.load(dump_file2)
+dump_file2.close()
+
+dump_file2 = open('tmp\\viajes_link_penalty_shortest_alternativas_desaglosadas_procesados_observed_parameters.pkl', 'rb')
+viajes_link_penalty_shortest_alternativas_desaglosadas_procesados_observed_parameters = dill.load(dump_file2)
+dump_file2.close()
+
+dump_file2 = open('tmp\\viajes_link_penalty_shortest_alternativas_procesados_observed_parameters.pkl', 'rb')
+viajes_link_penalty_shortest_alternativas_procesados_observed_parameters = dill.load(dump_file2)
 dump_file2.close()
 
 dump_file2 = open('tmp\\viajes_labeling_shortest_alternativas_desaglosadas_procesados.pkl', 'rb')
@@ -82,12 +116,28 @@ dump_file2 = open('tmp\\viajes_labeling_shortest_alternativas_procesados.pkl', '
 viajes_labeling_shortest_alternativas_procesados = dill.load(dump_file2)
 dump_file2.close()
 
+dump_file2 = open('tmp\\viajes_labeling_shortest_alternativas_desaglosadas_procesados_observed_parameters.pkl', 'rb')
+viajes_labeling_shortest_alternativas_desaglosadas_procesados_observed_parameters = dill.load(dump_file2)
+dump_file2.close()
+
+dump_file2 = open('tmp\\viajes_labeling_shortest_alternativas_procesados_observed_parameters.pkl', 'rb')
+viajes_labeling_shortest_alternativas_procesados_observed_parameters = dill.load(dump_file2)
+dump_file2.close()
+
 dump_file2 = open('tmp\\viajes_link_elimination_shortest_alternativas_desaglosadas_procesados.pkl', 'rb')
 viajes_link_elimination_shortest_alternativas_desaglosadas_procesados = dill.load(dump_file2)
 dump_file2.close()
 
 dump_file2 = open('tmp\\viajes_link_elimination_shortest_alternativas_procesados.pkl', 'rb')
 viajes_link_elimination_shortest_alternativas_procesados = dill.load(dump_file2)
+dump_file2.close()
+
+dump_file2 = open('tmp\\viajes_link_elimination_shortest_alternativas_desaglosadas_procesados_observed_parameters.pkl', 'rb')
+viajes_link_elimination_shortest_alternativas_desaglosadas_procesados_observed_parameters = dill.load(dump_file2)
+dump_file2.close()
+
+dump_file2 = open('tmp\\viajes_link_elimination_shortest_alternativas_procesados_observed_parameters.pkl', 'rb')
+viajes_link_elimination_shortest_alternativas_procesados_observed_parameters = dill.load(dump_file2)
 dump_file2.close()
 
 #archivos para prediccion
@@ -117,7 +167,8 @@ with open(os.path.join('inputs', 'info_servicios.json')) as data_file:
     data = json.loads(data_file.read())
 df = pd.DataFrame.from_dict(data, orient='columns')
 
-'''
+
+
 with open('outputs\\resumen_geografico_OD.csv', 'wb') as csvFile:
     writer = csv.writer(csvFile)
     writer.writerow(['origen', 'destino', 'x_origen', 'y_origen', 'x_destino', 'y_destino'])
@@ -127,25 +178,29 @@ with open('outputs\\resumen_geografico_OD.csv', 'wb') as csvFile:
             writer.writerow([origen, destino, paraderos_coord_dic[origen][0], paraderos_coord_dic[origen][1], paraderos_coord_dic[destino][0], paraderos_coord_dic[destino][1]])
 
 '''
-
-
-
 viajes_p = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
 viajes_alternativas_procesados_p = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
 viajes_alternativas_desaglosadas_procesados_p = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
-viajes_link_elimination_shortest_alternativas_desaglosadas_procesados_p = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
-viajes_link_elimination_shortest_alternativas_procesados_p = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
+viajes_labeling_shortest_alternativas_desaglosadas_procesados_p = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
+viajes_labeling_shortest_alternativas_procesados_p = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
 
-viajes_link_elimination_shortest_alternativas_desaglosadas_procesados_prediccion_p = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
-viajes_link_elimination_shortest_alternativas_procesados_prediccion_p = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
+viajes_p['T-13-12-NS-25']['M-MQ'] = viajes['T-13-12-NS-25']['M-MQ']
+viajes_alternativas_procesados_p['T-13-12-NS-25']['M-MQ'] = viajes_alternativas_procesados['T-13-12-NS-25']['M-MQ']
+viajes_alternativas_desaglosadas_procesados_p['T-13-12-NS-25']['M-MQ'] = viajes_alternativas_desaglosadas_procesados['T-13-12-NS-25']['M-MQ']
 
+viajes_labeling_shortest_alternativas_desaglosadas_procesados_p['T-13-12-NS-25']['M-MQ'] = viajes_labeling_shortest_alternativas_desaglosadas_procesados['T-13-12-NS-25']['M-MQ']
+viajes_labeling_shortest_alternativas_procesados_p['T-13-12-NS-25']['M-MQ'] = viajes_labeling_shortest_alternativas_procesados['T-13-12-NS-25']['M-MQ']
 
-viajes_p['L-17-16-30-NS']['L-13-96-20-OP'] = viajes['L-17-16-30-NS']['L-13-96-20-OP']
-viajes_alternativas_procesados_p['L-13-96-20-OP']['L-17-16-30-NS'] = viajes_alternativas_procesados['L-13-96-20-OP']['L-17-16-30-NS']
-viajes_alternativas_desaglosadas_procesados_p['L-13-96-20-OP']['L-17-16-30-NS'] = viajes_alternativas_desaglosadas_procesados['L-13-96-20-OP']['L-17-16-30-NS']
+viajes_p['M-CS']['L-1-26-5-OP'] = viajes['M-CS']['L-1-26-5-OP']
+viajes_alternativas_procesados_p['M-CS']['L-1-26-5-OP'] = viajes_alternativas_procesados['M-CS']['L-1-26-5-OP']
+viajes_alternativas_desaglosadas_procesados_p['M-CS']['L-1-26-5-OP'] = viajes_alternativas_desaglosadas_procesados['M-CS']['L-1-26-5-OP']
 
-viajes_link_elimination_shortest_alternativas_desaglosadas_procesados_p['L-13-96-20-OP']['L-17-16-30-NS'] = viajes_link_elimination_shortest_alternativas_desaglosadas_procesados['L-13-96-20-OP']['L-17-16-30-NS']
-viajes_link_elimination_shortest_alternativas_procesados_p['L-13-96-20-OP']['L-17-16-30-NS'] = viajes_link_elimination_shortest_alternativas_procesados['L-13-96-20-OP']['L-17-16-30-NS']
+viajes_labeling_shortest_alternativas_desaglosadas_procesados_p['M-CS']['L-1-26-5-OP'] = viajes_labeling_shortest_alternativas_desaglosadas_procesados['M-CS']['L-1-26-5-OP']
+viajes_labeling_shortest_alternativas_procesados_p['M-CS']['L-1-26-5-OP'] = viajes_labeling_shortest_alternativas_procesados['M-CS']['L-1-26-5-OP']
+
+print(viajes_alternativas_procesados_p['M-CS']['L-1-26-5-OP'])
+
+print(viajes_labeling_shortest_alternativas_desaglosadas_procesados_p['M-CS']['L-1-26-5-OP'])
 
 viajes_link_elimination_shortest_alternativas_desaglosadas_procesados_prediccion_p['L-13-96-20-OP']['L-17-16-30-NS'] = viajes_link_elimination_shortest_alternativas_desaglosadas_procesados['L-13-96-20-OP']['L-17-16-30-NS']
 viajes_link_elimination_shortest_alternativas_procesados_prediccion_p['L-13-96-20-OP']['L-17-16-30-NS'] = viajes_link_elimination_shortest_alternativas_procesados['L-13-96-20-OP']['L-17-16-30-NS']
@@ -171,7 +226,7 @@ viajes_link_elimination_shortest_alternativas_procesados_prediccion = viajes_lin
 viajes_link_elimination_shortest_alternativas_desaglosadas_procesados_prediccion = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: 0)))
 viajes_link_elimination_shortest_alternativas_desaglosadas_procesados_prediccion = viajes_link_elimination_shortest_alternativas_desaglosadas_procesados_prediccion_p
 
-
+'''
 def alternativas_maximas(diccionario):
     cant_max_alternativas_observadas = 0
     for o in diccionario:
@@ -244,9 +299,8 @@ Consideration_set_obj.get_consideration_set(g, hiperruta_minimo_camino_desglosad
 #viajes_alternativas_desaglosadas_procesados = viajes_alternativas_desaglosadas_procesados_p
 
 '''
-'''
 ###conjunto de consideracion para alternativas observadas###
-
+'''
 PS = process_frame_alt(viajes_alternativas_desaglosadas_procesados, g)
 
 print('calcule primer diccionario')
@@ -267,11 +321,38 @@ def alternativas_maximas(diccionario):
 Consideration_set_obj = Consideration_set(alternativas_maximas(viajes_alternativas_desaglosadas_procesados))
 
 Consideration_set_obj.get_consideration_set(g, viajes_alternativas_desaglosadas_procesados, viajes, dict_tiempos, dict_frecuencia,
-                                            paraderos_coord_dic, viajes_alternativas_procesados,dict_servicio_llave_usuario, g_metro, '2', PS_correlacion)
-'''
-'''
-###conjunto de consideracion para k rutas minimas###
+                                            paraderos_coord_dic, viajes_alternativas_procesados,dict_servicio_llave_usuario, g_metro, '2', PS_correlacion,
+                                            viajes_alternativas_procesados, viajes_alternativas_desaglosadas_procesados)
 
+'''
+###conjunto de consideracion para simulacion###
+'''
+PS = process_frame_alt(viajes_simulation_shortest_alternativas_desaglosadas_procesados, g)
+
+PS_correlacion = correlacion(df, PS, dict_tiempos)
+
+
+Consideration_set_obj = Consideration_set(viajes_simulation_shortest_alternativas_desaglosadas_procesados))
+
+Consideration_set_obj.get_consideration_set(g, viajes_simulation_shortest_alternativas_desaglosadas_procesados, viajes, dict_tiempos, dict_frecuencia,
+                                            paraderos_coord_dic, viajes_simulation_shortest_alternativas_procesados, dict_servicio_llave_usuario, g_metro, '3', PS_correlacion, viajes_alternativas_procesados, viajes_alternativas_desaglosadas_procesados)
+'''
+
+###conjunto de consideracion para simulacion with observed parameters###
+'''
+PS = process_frame_alt(viajes_simulation_shortest_alternativas_desaglosadas_procesados_observed_parameters, g)
+
+PS_correlacion = correlacion(df, PS, dict_tiempos)
+
+
+Consideration_set_obj = Consideration_set(viajes_simulation_shortest_alternativas_desaglosadas_procesados_observed_parameters))
+
+Consideration_set_obj.get_consideration_set(g, viajes_simulation_shortest_alternativas_desaglosadas_procesados_observed_parameters, viajes, dict_tiempos, dict_frecuencia,
+                                            paraderos_coord_dic, viajes_simulation_shortest_alternativas_procesados_observed_parameters, dict_servicio_llave_usuario, g_metro, '3', PS_correlacion, viajes_alternativas_procesados, viajes_alternativas_desaglosadas_procesados)
+'''
+
+###conjunto de consideracion para k rutas minimas###
+'''
 PS = process_frame_alt(viajes_k_shortest_alternativas_desaglosadas_procesados, g)
 
 PS_correlacion = correlacion(df, PS, dict_tiempos)
@@ -280,9 +361,19 @@ PS_correlacion = correlacion(df, PS, dict_tiempos)
 Consideration_set_obj = Consideration_set(alternativas_maximas(viajes_k_shortest_alternativas_desaglosadas_procesados))
 
 Consideration_set_obj.get_consideration_set(g, viajes_k_shortest_alternativas_desaglosadas_procesados, viajes, dict_tiempos, dict_frecuencia,
-                                            paraderos_coord_dic, viajes_k_shortest_alternativas_procesados, dict_servicio_llave_usuario, g_metro, '3', PS_correlacion)
+                                            paraderos_coord_dic, viajes_k_shortest_alternativas_procesados, dict_servicio_llave_usuario, g_metro, '3', PS_correlacion, viajes_alternativas_procesados, viajes_alternativas_desaglosadas_procesados)
 '''
+###conjunto de consideracion para k rutas minimas_observed_parameters###
 
+PS = process_frame_alt(viajes_k_shortest_alternativas_desaglosadas_procesados_observed_parameters, g)
+
+PS_correlacion = correlacion(df, PS, dict_tiempos)
+
+
+Consideration_set_obj = Consideration_set(alternativas_maximas(viajes_k_shortest_alternativas_desaglosadas_procesados_observed_parameters))
+
+Consideration_set_obj.get_consideration_set(g, viajes_k_shortest_alternativas_desaglosadas_procesados_observed_parameters, viajes, dict_tiempos, dict_frecuencia,
+                                            paraderos_coord_dic, viajes_k_shortest_alternativas_procesados_observed_parameters, dict_servicio_llave_usuario, g_metro, '3', PS_correlacion, viajes_alternativas_procesados, viajes_alternativas_desaglosadas_procesados)
 '''
 ###conjunto de consideracion para alternativas de prediccion###
 
@@ -306,8 +397,10 @@ def alternativas_maximas(diccionario):
 Consideration_set_obj = Consideration_set(alternativas_maximas(viajes_prediccion_alternativas_desaglosadas_procesados))
 
 Consideration_set_obj.get_consideration_set(g, viajes_prediccion_alternativas_desaglosadas_procesados, viajes_prediccion_procesados, dict_tiempos, dict_frecuencia,
-                                            paraderos_coord_dic, viajes_prediccion_alternativas_procesados,dict_servicio_llave_usuario, g_metro, '4', PS_correlacion)
+                                            paraderos_coord_dic, viajes_prediccion_alternativas_procesados,dict_servicio_llave_usuario, g_metro, '4', PS_correlacion,
+                                            viajes_prediccion_procesados, viajes_prediccion_alternativas_desaglosadas_procesados)
 '''
+
 '''
 ###conjunto de consideracion para labeling###
 
@@ -315,11 +408,30 @@ PS = process_frame_alt(viajes_labeling_shortest_alternativas_desaglosadas_proces
 
 PS_correlacion = correlacion(df, PS, dict_tiempos)
 
+print("correlation calculada")
+
+print(alternativas_maximas(viajes_labeling_shortest_alternativas_desaglosadas_procesados))
 
 Consideration_set_obj = Consideration_set(alternativas_maximas(viajes_labeling_shortest_alternativas_desaglosadas_procesados))
 
 Consideration_set_obj.get_consideration_set(g, viajes_labeling_shortest_alternativas_desaglosadas_procesados, viajes, dict_tiempos, dict_frecuencia,
-                                            paraderos_coord_dic, viajes_labeling_shortest_alternativas_procesados, dict_servicio_llave_usuario, g_metro, '5', PS_correlacion)
+                                            paraderos_coord_dic, viajes_labeling_shortest_alternativas_procesados, dict_servicio_llave_usuario, g_metro, '5', PS_correlacion, viajes_alternativas_procesados, viajes_alternativas_desaglosadas_procesados)
+
+#resumen
+
+resumen(viajes_labeling_shortest_alternativas_procesados, 'outputs\\resumen_labeling.csv', viajes)
+'''
+###conjunto de consideracion para labeling_observed_parameters###
+'''
+PS = process_frame_alt(viajes_labeling_shortest_alternativas_desaglosadas_procesados_observed_parameters, g)
+
+PS_correlacion = correlacion(df, PS, dict_tiempos)
+
+
+Consideration_set_obj = Consideration_set(alternativas_maximas(viajes_labeling_shortest_alternativas_desaglosadas_procesados_observed_parameters))
+
+Consideration_set_obj.get_consideration_set(g, viajes_labeling_shortest_alternativas_desaglosadas_procesados_observed_parameters, viajes, dict_tiempos, dict_frecuencia,
+                                            paraderos_coord_dic, viajes_labeling_shortest_alternativas_procesados_observed_parameters, dict_servicio_llave_usuario, g_metro, '5', PS_correlacion, viajes_alternativas_procesados, viajes_alternativas_desaglosadas_procesados)
 
 #resumen
 
@@ -337,15 +449,32 @@ PS_correlacion = correlacion(df, PS, dict_tiempos)
 Consideration_set_obj = Consideration_set(alternativas_maximas(viajes_link_penalty_shortest_alternativas_desaglosadas_procesados))
 
 Consideration_set_obj.get_consideration_set(g, viajes_link_penalty_shortest_alternativas_desaglosadas_procesados, viajes, dict_tiempos, dict_frecuencia,
-                                            paraderos_coord_dic, viajes_link_penalty_shortest_alternativas_procesados, dict_servicio_llave_usuario, g_metro, '6', PS_correlacion)
+                                            paraderos_coord_dic, viajes_link_penalty_shortest_alternativas_procesados, dict_servicio_llave_usuario, g_metro, '6', PS_correlacion, viajes_alternativas_procesados, viajes_alternativas_desaglosadas_procesados)
 
 #resumen
 
 resumen(viajes_link_penalty_shortest_alternativas_procesados, 'outputs\\resumen_link_penalty.csv', viajes)
 '''
 
-###conjunto de consideracion para link elimination###
+###conjunto de consideracion para link penalty_observed_parameters###
+'''
+PS = process_frame_alt(viajes_link_penalty_shortest_alternativas_desaglosadas_procesados_observed_parameters, g)
 
+PS_correlacion = correlacion(df, PS, dict_tiempos)
+
+
+Consideration_set_obj = Consideration_set(alternativas_maximas(viajes_link_penalty_shortest_alternativas_desaglosadas_procesados_observed_parameters))
+
+Consideration_set_obj.get_consideration_set(g, viajes_link_penalty_shortest_alternativas_desaglosadas_procesados_observed_parameters, viajes, dict_tiempos, dict_frecuencia,
+                                            paraderos_coord_dic, viajes_link_penalty_shortest_alternativas_procesados_observed_parameters, dict_servicio_llave_usuario, g_metro, '6', PS_correlacion, viajes_alternativas_procesados, viajes_alternativas_desaglosadas_procesados)
+
+#resumen
+
+resumen(viajes_link_penalty_shortest_alternativas_procesados, 'outputs\\resumen_link_penalty.csv', viajes)
+'''
+
+'''
+###conjunto de consideracion para link elimination###
 
 PS = process_frame_alt(viajes_link_elimination_shortest_alternativas_desaglosadas_procesados, g)
 
@@ -365,6 +494,28 @@ Consideration_set_obj.get_consideration_set(g, viajes_link_elimination_shortest_
 
 resumen(viajes_link_elimination_shortest_alternativas_procesados, 'outputs\\resumen_link_elimination.csv', viajes)
 
+'''
+'''
+###conjunto de consideracion para link elimination_observed_parameters###
+
+PS = process_frame_alt(viajes_link_elimination_shortest_alternativas_desaglosadas_procesados_observed_parameters, g)
+
+PS_correlacion = correlacion(df, PS, dict_tiempos)
+
+Consideration_set_obj = Consideration_set(alternativas_maximas(viajes_link_elimination_shortest_alternativas_desaglosadas_procesados_observed_parameters))
+
+alternativa_observada = True
+
+viajes_copia = copy.deepcopy(viajes)
+
+Consideration_set_obj.get_consideration_set(g, viajes_link_elimination_shortest_alternativas_desaglosadas_procesados_observed_parameters, viajes_copia, dict_tiempos, dict_frecuencia,
+                                            paraderos_coord_dic, viajes_link_elimination_shortest_alternativas_procesados_observed_parameters, dict_servicio_llave_usuario, g_metro, '7', PS_correlacion,
+                                            viajes_alternativas_procesados, viajes_alternativas_desaglosadas_procesados)
+
+#resumen
+
+resumen(viajes_link_elimination_shortest_alternativas_procesados_observed_parameters, 'outputs\\resumen_link_elimination_observed_parameters.csv', viajes)
+'''
 '''
 #prediccion_link_elimination
 

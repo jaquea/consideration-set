@@ -86,7 +86,13 @@ class Atributes:
                         if dif > 0 and dict_tiempos[str][n] > -1 and dict_tiempos[str][nodo_anterior_anterior] > -1:
                             frecuencia += dict_frecuencia[str][nodo_anterior_anterior]
                             contador += 1
-                tpo_espera = contador / frecuencia
+
+                if frecuencia > 0:
+                    tpo_espera = contador / frecuencia
+
+                else:
+                    tpo_espera = 0
+
                 tpo_viaje = self.g_metro.shortest_paths_dijkstra(source=n_origen, target=n_destino, weights=self.g_metro.es["peso"],mode=OUT)[0][0] - tpo_espera
                 self.tpo_metro += tpo_viaje
 
