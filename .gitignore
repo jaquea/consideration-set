@@ -1,5 +1,5 @@
 venv/
-inputs/
-outputs/
+#inputs/
+#outputs/
 #tmp/
 .idea/
